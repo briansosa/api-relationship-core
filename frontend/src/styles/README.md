@@ -1,0 +1,1 @@
+Estilos globales, de las pages por ejemplo

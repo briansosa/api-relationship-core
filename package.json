@@ -1,0 +1,15 @@
+{
+  "devDependencies": {
+    "antd": "^5.17.2",
+    "curlconverter": "^4.9.0",
+    "less": "^4.2.0",
+    "less-loader": "^12.2.0",
+    "react-router-dom": "^6.14.2",
+    "vite-plugin-style-import": "^2.0.0"
+  },
+  "dependencies": {
+    "json-edit-react": "^1.9.3",
+    "react-json-pretty": "^2.2.0",
+    "short-unique-id": "^5.2.0"
+  }
+}

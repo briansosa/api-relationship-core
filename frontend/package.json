@@ -1,0 +1,44 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.1.4",
+    "antd": "^5.17.3",
+    "curl-to-json-object": "^0.0.3",
+    "json-edit-react": "^1.11.0",
+    "re-resizable": "^6.9.9",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-pro-sidebar": "^1.1.0-alpha.1",
+    "react-resizable": "^3.0.5",
+    "react-router-dom": "^6.23.1",
+    "short-unique-id": "^5.2.0",
+    "yargs-parser": "^21.1.1"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@juln/curl-to-json": "^1.0.6",
+    "@mui/icons-material": "^5.14.1",
+    "@mui/material": "^5.14.1",
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@vitejs/plugin-react": "^2.0.1",
+    "less": "^4.2.0",
+    "less-loader": "^12.2.0",
+    "prop-types": "^15.8.1",
+    "recharts": "^2.7.2",
+    "shell-quote": "^1.8.1",
+    "url": "^0.11.3",
+    "vite": "^3.0.7",
+    "vite-plugin-node-polyfills": "^0.22.0",
+    "vite-plugin-style-import": "^2.0.0"
+  }
+}

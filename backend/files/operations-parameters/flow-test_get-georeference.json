@@ -1,0 +1,19 @@
+{
+    "params": [
+        {
+            "name": "lat",
+            "type": "query_param"
+        },
+        {
+            "name": "lon",
+            "type": "query_param"
+        }
+    ],
+    "url": "https://apis.datos.gob.ar/georef/api/ubicacion",
+    "method_type": "GET",
+    "request_type": "json",
+    "timeout": 30,
+    "query_params": null,
+    "headers": null,
+    "body": null
+}

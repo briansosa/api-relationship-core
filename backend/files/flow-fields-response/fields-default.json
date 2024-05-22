@@ -1,0 +1,29 @@
+{
+    "fields_response": [
+        {
+            "operation_name": "get-georeference",
+            "field_response": "ubicacion.departamento.nombre"
+        },
+        {
+            "operation_name": "location",
+            "field_response": "direccionesNormalizadas.#.coordenadas.x"
+        },
+        {
+            "operation_name": "location",
+            "field_response": "direccionesNormalizadas.#.coordenadas.y"
+        },
+        {
+            "operation_name": "get-georeference",
+            "field_response": "ubicacion.provincia.nombre"
+        },
+        {
+            "operation_name": "location",
+            "field_response": "direccionesNormalizadas.#.nombre_localidad"
+        },
+        {
+            "operation_name": "get-georeference",
+            "field_response": "ubicacion.municipio.nombre"
+        }
+    ]    
+}
+

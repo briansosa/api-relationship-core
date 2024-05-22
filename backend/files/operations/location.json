@@ -1,0 +1,38 @@
+{
+    "url": "https://servicios.usig.buenosaires.gob.ar/normalizar",
+    "method_type": "GET",
+    "request_type": "json",
+    "query_params": {
+        "direccion": "de la peña 912, lanus",
+        "geocodificar": true
+    },
+    "headers": null,
+    "body": null,
+    "response_schema": {
+        "response": {
+            "direccionesNormalizadas": "list"
+        },
+        "objects": [
+            {
+                "direccionesNormalizadas": {
+                    "altura": "int",
+                    "cod_calle": "int",
+                    "cod_calle_cruce": "int",
+                    "cod_partido": "string",
+                    "coordenadas": {
+                        "srid": "integer",
+                        "x": "float64",
+                        "y": "float64"
+                    },
+                    "direccion": "string",
+                    "nombre_calle": "string",
+                    "nombre_calle_cruce": "string",
+                    "nombre_localidad": "string",
+                    "nombre_partido": "string",
+                    "tipo": "string"
+                }
+            }
+        ]
+    }
+}
+

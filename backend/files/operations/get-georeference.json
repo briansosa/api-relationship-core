@@ -1,0 +1,33 @@
+{
+    "url": "https://apis.datos.gob.ar/georef/api/ubicacion",
+    "method_type": "GET",
+    "request_type": "json",
+    "query_params": {
+        "lon": -58.3523998816327,
+        "lat": -34.7208329938776
+    },
+    "headers": null,
+    "body": null,
+    "response_schema": {
+        "parametros": {
+            "lat": "float64",
+            "lon": "float64"
+        },
+        "ubicacion": {
+            "departamento": {
+                "id": "string",
+                "nombre": "string"
+            },
+            "lat": "float64",
+            "lon": "float64",
+            "municipio": {
+                "id": "string",
+                "nombre": "string"
+            },
+            "provincia": {
+                "id": "string",
+                "nombre": "string"
+            }
+        }
+    }
+}

@@ -1,0 +1,93 @@
+[
+{
+    "street": "rangugni 3056, lanus",
+    "get-georeference@ubicacion.departamento.nombre": "Comuna 6",
+    "location@direccionesNormalizadas.#.coordenadas.x": [
+        "-58.467947",
+        "-58.456701"
+    ],
+    "location@direccionesNormalizadas.#.coordenadas.y": [
+        "-34.610016",
+        "-34.605036"
+    ],
+    "get-georeference@ubicacion.provincia.nombre": "Ciudad Autónoma de Buenos Aires",
+    "location@direccionesNormalizadas.#.nombre_localidad": [
+        "CABA",
+        "CABA"
+    ],
+    "get-georeference@ubicacion.municipio.nombre": "Comuna 6",
+    "error": "false",
+    "error_message": null
+},
+{
+    "street": "de la peña 912, lanus",
+    "get-georeference@ubicacion.departamento.nombre": "Comuna 6",
+    "location@direccionesNormalizadas.#.coordenadas.x": [
+        "-58.467947",
+        "-58.456701"
+    ],
+    "location@direccionesNormalizadas.#.coordenadas.y": [
+        "-34.610016",
+        "-34.605036"
+    ],
+    "get-georeference@ubicacion.provincia.nombre": "Ciudad Autónoma de Buenos Aires",
+    "location@direccionesNormalizadas.#.nombre_localidad": [
+        "CABA",
+        "CABA"
+    ],
+    "get-georeference@ubicacion.municipio.nombre": "Comuna 6",
+    "error": "false",
+    "error_message": null
+},
+{
+    "street": "san martin 2002, caba",
+    "get-georeference@ubicacion.departamento.nombre": "Lanús",
+    "location@direccionesNormalizadas.#.coordenadas.x": [
+        -58.3963983979592
+    ],
+    "location@direccionesNormalizadas.#.coordenadas.y": [
+        -34.7048365326531
+    ],
+    "get-georeference@ubicacion.provincia.nombre": "Buenos Aires",
+    "location@direccionesNormalizadas.#.nombre_localidad": [
+        "Lanús Oeste"
+    ],
+    "get-georeference@ubicacion.municipio.nombre": "Lanús",
+    "error": "false",
+    "error_message": null
+},
+{
+    "street": "aristobulo del valle 348, lanus",
+    "get-georeference@ubicacion.departamento.nombre": "Lanús",
+    "location@direccionesNormalizadas.#.coordenadas.x": [
+        -58.3963983979592
+    ],
+    "location@direccionesNormalizadas.#.coordenadas.y": [
+        -34.7048365326531
+    ],
+    "get-georeference@ubicacion.provincia.nombre": "Buenos Aires",
+    "location@direccionesNormalizadas.#.nombre_localidad": [
+        "Lanús Oeste"
+    ],
+    "get-georeference@ubicacion.municipio.nombre": "Lanús",
+    "error": "false",
+    "error_message": null
+},
+{
+    "street": "de la peña 910, lanus",
+    "get-georeference@ubicacion.departamento.nombre": "Lanús",
+    "location@direccionesNormalizadas.#.coordenadas.x": [
+        -58.3523827653061
+    ],
+    "location@direccionesNormalizadas.#.coordenadas.y": [
+        -34.720818155102
+    ],
+    "get-georeference@ubicacion.provincia.nombre": "Buenos Aires",
+    "location@direccionesNormalizadas.#.nombre_localidad": [
+        "Monte Chingolo"
+    ],
+    "get-georeference@ubicacion.municipio.nombre": "Lanús",
+    "error": "false",
+    "error_message": null
+}
+]

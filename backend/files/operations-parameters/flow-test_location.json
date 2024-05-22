@@ -1,0 +1,17 @@
+{
+    "params": [
+        {
+            "name": "direccion",
+            "type": "query_param"
+        }
+    ],
+    "url": "https://servicios.usig.buenosaires.gob.ar/normalizar",
+    "method_type": "GET",
+    "request_type": "json",
+    "timeout": 30,
+    "query_params": {
+        "geocodificar": true
+    },
+    "headers": null,
+    "body": null
+}

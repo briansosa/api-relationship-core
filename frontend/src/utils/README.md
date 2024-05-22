@@ -1,0 +1,1 @@
+diferentes js para funcionalidades por ejemplo, llamados a apis, funciones de validaciones de formato, helpers, conversores

@@ -1,0 +1,31 @@
+{
+    "name": "location",
+    "relation_fields": [
+        {
+            "type": "input",
+            "parent_field": "street",
+            "child_parameter": "direccion"
+        }
+    ],
+    "max_concurrency": 4,
+    "relation_operations": [
+        {
+            "name": "get-georeference",
+            "search_type": "direct_product",
+            "max_concurrency": 2,
+            "relation_fields": [
+                {
+                    "type": "query_param",
+                    "parent_field": "location@direccionesNormalizadas.#.coordenadas.x",
+                    "child_parameter": "lon"
+                },
+                {
+                    "type": "query_param",
+                    "parent_field": "location@direccionesNormalizadas.#.coordenadas.y",
+                    "child_parameter": "lat"
+                }
+            ],
+            "relation_operations": []
+        }
+    ]
+}
