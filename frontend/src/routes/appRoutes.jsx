@@ -2,7 +2,8 @@ import {
   HomeView,
   OperationSchemaView,
   OperationTemplateView,
-  ProcessView
+  ProcessView,
+  FlowView
 } from '../views';
 
 import {
@@ -38,7 +39,7 @@ export const AppRoutes = [
   },
   {
     path: "/flow",
-    component: OperationTemplateView,
+    component: FlowView,
     title: "Flow",
     icon: <NotificationOutlined/>,
     children: [],
