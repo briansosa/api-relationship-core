@@ -6,16 +6,18 @@ import { Col, Layout, Row } from "antd";
 
 const { Content } = Layout;
 
-const Master = (props) => {
+const Master = ({ component: Component }) => {
   return (
     <Layout>
       <Layout className="site-layout">
         {/* <SectionHeader></SectionHeader> */}
-          <Layout>
-            <SectionSidebar></SectionSidebar>
-            <Content style={{ height: "97vh" }}>{props.component()}</Content>
-          </Layout>
-          <SectionFooter></SectionFooter>
+        <Layout>
+          <SectionSidebar></SectionSidebar>
+          <Content style={{ height: "97vh" }}>
+            <Component />
+          </Content>
+        </Layout>
+        <SectionFooter></SectionFooter>
       </Layout>
     </Layout>
   );

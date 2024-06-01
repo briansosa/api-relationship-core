@@ -104,7 +104,7 @@ function OperationTemplateView() {
   // Handlers
 
   function handleSidebarSelect(item) {
-    navigate(`/operation_schemas/edit/${item.key}`);
+    navigate(`/operation_templates/edit/${item.key}`);
   }
 
   const handleSaveSchema = () => {
@@ -144,7 +144,7 @@ function OperationTemplateView() {
   };
 
   const handleAddSchema = () => {
-    navigate(`/operation_schemas/new`);
+    navigate(`/operation_templates/new`);
   };
 
   const handleClickSchemaFromCurl = () => {
@@ -207,7 +207,7 @@ function OperationTemplateView() {
   function UpdateSchema(item) {
     UpdateOperationSchema(item)
       .then(() => {
-        const url = `/operation_schemas/edit/${state.id}`;
+        const url = `/operation_templates/edit/${state.id}`;
         navigate(url);
       })
       .catch((error) => {
@@ -219,7 +219,7 @@ function OperationTemplateView() {
   function InsertSchema(schema) {
     InsertOperationSchema(schema)
       .then((result) => {
-        const url = `/operation_schemas/edit/${result.id}`;
+        const url = `/operation_templates/edit/${result.id}`;
         navigate(url);
       })
       .catch((error) => {
@@ -258,7 +258,7 @@ function OperationTemplateView() {
   function DeleteSchema(id) {
     DeleteOperationSchema(id)
       .then(() => {
-        const url = `/operation_schemas`;
+        const url = `/operation_templates`;
         navigate(url);
       })
       .catch((error) => {

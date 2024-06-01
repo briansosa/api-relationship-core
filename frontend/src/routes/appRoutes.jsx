@@ -1,7 +1,7 @@
 import {
   HomeView,
   OperationSchemaView,
-  RelationOperationView,
+  OperationTemplateView,
   ProcessView
 } from '../views';
 
@@ -28,15 +28,17 @@ export const AppRoutes = [
     children: [],
   },
   {
-    path: "/operation_templates",
-    component: RelationOperationView,
+    // path: "/operation_templates",
+    // first route of array is a principal in sidebar menu
+    path: ["/operation_templates", "/operation_templates/schema/:schema_id"],
+    component: OperationTemplateView,
     title: "Operation Templates",
     icon: <LaptopOutlined/>,
     children: [],
   },
   {
     path: "/flow",
-    component: RelationOperationView,
+    component: OperationTemplateView,
     title: "Flow",
     icon: <NotificationOutlined/>,
     children: [],

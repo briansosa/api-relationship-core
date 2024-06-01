@@ -1,11 +1,11 @@
 import HomeView from "./HomeView";
 import OperationSchemaView from "./OperationSchemaView";
-import RelationOperationView from "./RelationOperationView";
+import OperationTemplateView from "./OperationTemplateView";
 import ProcessView from "./ProcessView";
 
 export {
     HomeView,
     OperationSchemaView,
-    RelationOperationView,
+    OperationTemplateView,
     ProcessView,
 };
