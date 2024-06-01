@@ -8,14 +8,14 @@ const { Content } = Layout;
 
 const Master = (props) => {
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout>
       <Layout className="site-layout">
-        <SectionHeader></SectionHeader>
-        <Layout>
-          <SectionSidebar></SectionSidebar>
-          <Content style={{ height: "100%" }}>{props.component()}</Content>
-        </Layout>
-        <SectionFooter></SectionFooter>
+        {/* <SectionHeader></SectionHeader> */}
+          <Layout>
+            <SectionSidebar></SectionSidebar>
+            <Content style={{ height: "97vh" }}>{props.component()}</Content>
+          </Layout>
+          <SectionFooter></SectionFooter>
       </Layout>
     </Layout>
   );

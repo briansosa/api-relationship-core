@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 	"time"
 
@@ -58,6 +59,10 @@ func (h *OperationSchemaHandler) InsertOperationSchema(operation operation.Opera
 }
 
 func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*map[string]interface{}, error) {
+	if operation.Timeout == nil || operation.Url == nil || operation.MethodType == nil {
+		return nil, fmt.Errorf("Error: Required fields are missing")
+	}
+
 	context, _ := gin.CreateTestContext(httptest.NewRecorder())
 	timeoutValue := operation.Timeout
 	if *timeoutValue == 0 {

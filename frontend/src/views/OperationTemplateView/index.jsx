@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Layout, Row, Col, Divider, Button, Card } from "antd";
+import {
+  Layout,
+  Row,
+  Col,
+  Empty,
+  Space,
+  Divider,
+  Button,
+  Card,
+  Select,
+} from "antd";
 import ShortUniqueId from "short-unique-id";
 const { Content } = Layout;
 import {
@@ -19,8 +29,8 @@ import CustomSidebar from "../../components/common/CustomSidebar";
 import Loading from "../../components/common/Loading";
 import CurlModal from "../../components/controls/CurlModal";
 
-const OperationSchemaView = () => {
-  const params = useParams();
+function OperationTemplateView() {
+  const urlParams = useParams();
   const navigate = useNavigate();
 
   const entityInit = {
@@ -35,37 +45,46 @@ const OperationSchemaView = () => {
     response: null,
     timeout: 0,
     url: "",
+    params: [],
   };
 
   //hooks
   const [state, setState] = useState({
-    id: params.id ? params.id : "0",
-    mode: params.mode,
+    id: urlParams.id ? urlParams.id : "0",
+    mode: urlParams.mode,
     loading: false,
     entity: entityInit,
-    list: null,
+    listSchemas: [],
     disable: true,
     showCurlModal: false,
+    schemaId: null,
+    empty: true,
   });
 
   const mount = () => {
-    if (params.id != "0" && params.mode == "edit") {
+    console.log(urlParams);
+    if (!urlParams.id && !urlParams.mode) {
+      GetAllSchemas();
+      console.log("no hay params");
+    }
+
+    if (urlParams.id != "0" && urlParams.mode == "edit") {
       setState((prevState) => ({
         ...prevState,
-        id: params.id ? params.id : "0",
-        mode: params.mode,
+        id: urlParams.id ? urlParams.id : "0",
+        mode: urlParams.mode,
         disable: false,
       }));
 
-      GetSchema(params.id);
+      GetSchema(urlParams.id);
     }
 
-    if (params.mode == "new") {
+    if (urlParams.mode == "new") {
       const randomId = new ShortUniqueId().rnd();
       setState((prevState) => ({
         ...prevState,
         id: randomId,
-        mode: params.mode,
+        mode: urlParams.mode,
         disable: false,
       }));
 
@@ -77,10 +96,10 @@ const OperationSchemaView = () => {
       });
     }
 
-    GetAllSchemas();
+    // GetAllSchemas();
   };
 
-  useEffect(mount, [params]);
+  useEffect(mount, [urlParams]);
 
   // Handlers
 
@@ -89,8 +108,6 @@ const OperationSchemaView = () => {
   }
 
   const handleSaveSchema = () => {
-    const transformedJson = transformJsonValues(state.entity.response);
-
     // TODO: validate form
 
     const data = new operation.Operation({
@@ -101,7 +118,6 @@ const OperationSchemaView = () => {
       name: state.entity.name,
       query_params: state.entity.query_params,
       request_type: state.entity.request_type,
-      schema: transformedJson,
       response: state.entity.response,
       timeout: state.entity.timeout != 0 ? state.entity.timeout : 30,
       url: state.entity.url,
@@ -162,7 +178,7 @@ const OperationSchemaView = () => {
           return {
             ...prevState,
             disable: false,
-            list: result,
+            listSchemas: result,
           };
         });
       })
@@ -253,28 +269,6 @@ const OperationSchemaView = () => {
 
   // helpers
 
-  function transformJsonValues(json) {
-    if (typeof json === "number") {
-      return json % 1 === 0 ? 99 : 99.99;
-    }
-    if (typeof json === "string") {
-      return "default";
-    }
-    if (typeof json === "boolean") {
-      return false;
-    }
-    if (Array.isArray(json)) {
-      return transformJsonValues(json[0]);
-    }
-    if (typeof json === "object" && json !== null) {
-      return Object.keys(json).reduce((acc, key) => {
-        acc[key] = transformJsonValues(json[key]);
-        return acc;
-      }, {});
-    }
-    return json;
-  }
-
   const addOptionsSidebar = [
     {
       label: "Add Operation Schema",
@@ -293,69 +287,57 @@ const OperationSchemaView = () => {
     },
   ];
 
+  const onChangeSelect = (value) => {
+    console.log(`selected ${value}`);
+  };
+
+  const filterOptionSelect = (input, option) => {
+    return (option.label ?? "").toLowerCase().includes(input.toLowerCase());
+  };
+
+  const selectSchemaInput = (
+    <Select
+      showSearch
+      placeholder="Select a schema"
+      defaultValue={null}
+      optionFilterProp="children"
+      onChange={onChangeSelect}
+      filterOption={filterOptionSelect}
+      options={state.listSchemas.map((value) => {
+        return { value: value.id, label: value.name };
+      })}
+    />
+  );
+
   return (
     <>
-      <Layout style={{ height: "100%" }}>
-        {state.showCurlModal && (
-          <CurlModal
-            onConfirm={handleAddSchemaFromCurl}
-            onCancel={(e) =>
-              setState((prevState) => ({ ...prevState, showCurlModal: false }))
-            }
+      <Row style={{ height: "100%" }}>
+        <Col style={{ height: "100%" }} span={5}>
+          <CustomSidebar
+            data={state.listSchemas}
+            title="Operation Templates"
+            searchMode={true}
+            onUpdate={UpdateSchema}
+            onSelect={handleSidebarSelect}
+            addOptions={addOptionsSidebar}
+            itemsOptions={itemsOptionsSidebar}
+            headerExtraRow={selectSchemaInput}
           />
-        )}
-        <Col>
-        <CustomSidebar
-          data={state.list}
-          title="Operation Schemas"
-          searchMode={true}
-          onUpdate={UpdateSchema}
-          onSelect={handleSidebarSelect}
-          addOptions={addOptionsSidebar}
-          itemsOptions={itemsOptionsSidebar}
-        />
         </Col>
-        <Layout>
-          <Content style={{ margin: "24px 16px" }}>
-            <Row>
-              <Col span={11}>
-                <RequestForm
-                  entity={state.entity}
-                  onConfirm={handleSubmit}
-                ></RequestForm>
-              </Col>
-              <Col span={2}>
-                <Divider
-                  type="vertical"
-                  style={{ height: "90vh", backgroundColor: "#000" }}
-                />
-              </Col>
-              <Col span={11}>
-                <Loading visible={state.loading} content={true}></Loading>
-                <Button
-                  type="primary"
-                  onClick={handleSaveSchema}
-                  style={{ marginTop: "20px" }}
-                >
-                  Save Schema
-                </Button>
-                <Card
-                  style={{ height: "80vh", overflow: "scroll", padding: 0 }}
-                >
-                  <JsonViewer
-                    json={state.entity.response}
-                    allowEdit={false}
-                    allowAdd={false}
-                    allowDelete={false}
-                  />
-                </Card>
-              </Col>
-            </Row>
-          </Content>
-        </Layout>
-      </Layout>
+        <Col span={19} style={{ height: "100%" }}>
+          <Space align={"center"} style={{ height: "100%" }}>
+            <Content>
+              {state.empty ? (
+                <Empty></Empty>
+              ) : (
+                <></>
+              )}
+            </Content>
+          </Space>
+        </Col>
+      </Row>
     </>
   );
-};
+}
 
-export default OperationSchemaView;
+export default OperationTemplateView;

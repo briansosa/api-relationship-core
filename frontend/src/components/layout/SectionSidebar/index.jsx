@@ -44,7 +44,7 @@ const SectionSidebar = () => {
       trigger={null}
       collapsible
       collapsed={collapsed}
-      width={200}
+      // width={200}
       breakpoint="xxl"
       collapsedWidth={"50px"}
     >
