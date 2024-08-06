@@ -18,7 +18,6 @@ import (
 	"github.com/api-relationship-core/backend/pkg/jsonmemory"
 	"github.com/api-relationship-core/backend/pkg/taskmanager"
 
-	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slices"
 
 	flowfieldsresponse "github.com/api-relationship-core/backend/internal/domain/models/flow_fields_response"
@@ -56,7 +55,7 @@ func NewProcessService(
 	}
 }
 
-func (service *ProcessService) Process(context *gin.Context, process *process.Process) (*process.Process, error) {
+func (service *ProcessService) Process(process *process.Process) (*process.Process, error) {
 	err := service.initializeProcess(process)
 	if err != nil {
 		return nil, err
@@ -103,7 +102,7 @@ func (service *ProcessService) Process(context *gin.Context, process *process.Pr
 			buildInitialOperationProcess(&initialOperationProcess, processObject.flow.RelationFields, &initialOperationSchema, record, headers)
 
 			// Make first Api Call
-			response, err := service.MakeOperationHttpRequest(context, initialOperationProcess)
+			response, err := service.MakeOperationHttpRequest(initialOperationProcess)
 			if err != nil {
 				return memory, service.handleError(err, errorcustom.NewApiCallError, processObject.flow.Name)
 			}
@@ -117,7 +116,7 @@ func (service *ProcessService) Process(context *gin.Context, process *process.Pr
 			//
 			// Make relation operations
 			//
-			err = service.makeCallsToRelationOperations2(context, processObject.flow.RelationOperations, &memory)
+			err = service.makeCallsToRelationOperations(processObject.flow.RelationOperations, &memory)
 			if err != nil {
 				return memory, err
 			}
@@ -146,7 +145,7 @@ func (service *ProcessService) Process(context *gin.Context, process *process.Pr
 	return &processResult, nil
 }
 
-func (service *ProcessService) MakeOperationHttpRequest(context *gin.Context, operation operation.OperationProcess) (string, error) {
+func (service *ProcessService) MakeOperationHttpRequest(operation operation.OperationProcess) (string, error) {
 	request := httpClientModel.ClientHttpRequest{
 		Transport: httpClientModel.Transport{
 			Url:        operation.Url,
@@ -156,7 +155,7 @@ func (service *ProcessService) MakeOperationHttpRequest(context *gin.Context, op
 		},
 	}
 
-	response, err := service.httpClientService.DoApiCall(context, request)
+	response, err := service.httpClientService.DoApiCall(request)
 	if err != nil {
 		return "", err
 	}
@@ -209,7 +208,7 @@ func (service *ProcessService) initializeProcess(process *process.Process) error
 	return nil
 }
 
-func (service *ProcessService) makeCallsToRelationOperations2(context *gin.Context, relationOperations []flow.Flow, memory *memory_pkg.Memory) error {
+func (service *ProcessService) makeCallsToRelationOperations(relationOperations []flow.Flow, memory *memory_pkg.Memory) error {
 	for _, relationOperation := range relationOperations {
 		// TODO: falta hacer recursividad por este for, pero hacerlo despues de manejar los errores, asi no es re-trabajo
 		operationSchema, err := service.persistenceService.GetOperationSchema(relationOperation.OperationSchemaID)
@@ -237,7 +236,7 @@ func (service *ProcessService) makeCallsToRelationOperations2(context *gin.Conte
 		for _, operationSafe := range operationsProcess {
 			operation := operationSafe
 			processor.AddTask(func() {
-				response, err := service.MakeOperationHttpRequest(context, operation)
+				response, err := service.MakeOperationHttpRequest(operation)
 				if err != nil {
 					errCustom := service.handleError(err, errorcustom.NewApiCallError, relationOperation.Name)
 					resultCh <- concurrency.TaskResult{Result: memory, Err: errCustom}
@@ -272,7 +271,7 @@ func (service *ProcessService) makeCallsToRelationOperations2(context *gin.Conte
 
 			// If have any relation operation then init recursivity
 			if len(relationOperation.RelationOperations) != 0 {
-				err = service.makeCallsToRelationOperations2(context, relationOperation.RelationOperations, memory)
+				err = service.makeCallsToRelationOperations(relationOperation.RelationOperations, memory)
 				if err != nil {
 					// TODO: handle error
 					return err
@@ -374,7 +373,8 @@ func buildInitialOperationProcess(operationProcess *operation.OperationProcess, 
 				return err
 			}
 
-			param := operationParameter.Params[indexParameter]
+			params := *operationParameter.Params
+			param := params[indexParameter]
 			fillOperationWithValue(operationProcess, param, valueRecord)
 		}
 	}
@@ -425,7 +425,8 @@ func buildSimpleOperationProcess(operationProcess *operation.OperationProcess, r
 	for _, relationField := range relationFields {
 		indexParameter, okChildParameter := containChildParameter(*operationParameter, relationField.ChildParameter)
 		if okChildParameter {
-			param := operationParameter.Params[indexParameter]
+			params := *operationParameter.Params
+			param := params[indexParameter]
 			values, ok := memory.GetValuesFromKey(relationField.ParentField)
 			if !ok {
 				return nil, fmt.Errorf("Field no encontrado")
@@ -446,7 +447,7 @@ func buildMultipleOperationProcess(operationProcess operation.OperationProcess, 
 	var generateCartesianProduct func(int, map[string]interface{}) error
 	generateCartesianProduct = func(index int, currentCombination map[string]interface{}) error {
 		if index == len(relationFields) {
-			err := fillOperationProcessParams(&operationProcess, operationParameter.Params, currentCombination)
+			err := fillOperationProcessParams(&operationProcess, *operationParameter.Params, currentCombination)
 			if err != nil {
 				return err
 			}
@@ -497,7 +498,7 @@ func buildDirectProductOperationProcess(operationProcess operation.OperationProc
 	var generateDirectProduct func(int, map[string]interface{}) error
 	generateDirectProduct = func(index int, currentCombination map[string]interface{}) error {
 		if index == len(relationFields) {
-			err := fillOperationProcessParams(&operationProcess, operationParameter.Params, currentCombination)
+			err := fillOperationProcessParams(&operationProcess, *operationParameter.Params, currentCombination)
 			if err != nil {
 				return err
 			}
@@ -604,7 +605,7 @@ func getValueFromRecord(headers []string, record []string, headerName string) (s
 }
 
 func containChildParameter(operationParameter operationparameter.OperationParameter, childParameter string) (int, bool) {
-	indexParameter := slices.IndexFunc(operationParameter.Params, func(value operationparameter.Parameters) bool {
+	indexParameter := slices.IndexFunc(*operationParameter.Params, func(value operationparameter.Parameters) bool {
 		return value.Name == childParameter
 	})
 

@@ -12,6 +12,7 @@ type FileRepository interface {
 
 type DBRepository interface {
 	GetBy(key string) (*persistence.KeyValue, error)
+	GetAllKeys(keys []string) ([]*persistence.KeyValue, error)
 	GetAll() ([]*persistence.KeyValue, error)
 	Update(key string, value []byte) error
 	Delete(key string) error

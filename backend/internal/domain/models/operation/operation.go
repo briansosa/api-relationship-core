@@ -19,6 +19,7 @@ type Operation struct {
 	Body        *json.RawMessage        `json:"body,omitempty"`     // TODO: ver tipo de datos
 	Response    *json.RawMessage        `json:"response,omitempty"` // TODO: ver tipo de datos
 	Schema      *json.RawMessage        `json:"schema,omitempty"`   // TODO: ver tipo de datos
+	Templates   *[]string               `json:"templates_id,omitempty"`
 }
 
 type OperationProcess struct {
@@ -33,10 +34,10 @@ type OperationProcess struct {
 
 func NewOperationProcess(operation operationparameter.OperationParameter) OperationProcess {
 	return OperationProcess{
-		Url:         operation.Url,
-		MethodType:  operation.MethodType,
-		RequestType: operation.RequestType,
-		Timeout:     time.Duration(operation.Timeout) * time.Second,
+		Url:         *operation.Url,
+		MethodType:  *operation.MethodType,
+		RequestType: *operation.RequestType,
+		Timeout:     time.Duration(*operation.Timeout) * time.Second,
 		QueryParams: make(map[string]interface{}),
 		Headers:     make(map[string]interface{}),
 	}

@@ -9,8 +9,6 @@ import (
 	"github.com/api-relationship-core/backend/internal/domain/ports"
 	"github.com/api-relationship-core/backend/pkg/io"
 
-	"github.com/gin-gonic/gin"
-
 	httpClientModel "github.com/api-relationship-core/backend/internal/domain/models/http_client"
 )
 
@@ -25,8 +23,8 @@ func NewClientHttp(client *http.Client) ports.HttpClient {
 	}
 }
 
-func (service *HttpClientService) DoApiCall(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest) ([]byte, error) {
-	request, err := prepareRequest(context, httpRequest)
+func (service *HttpClientService) DoApiCall(httpRequest httpClientModel.ClientHttpRequest) ([]byte, error) {
+	request, err := prepareRequest(httpRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +46,8 @@ func (service *HttpClientService) DoApiCall(context *gin.Context, httpRequest ht
 	return responseBytes, nil
 }
 
-func (service *HttpClientService) TestApiCall(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest) (*httpClientModel.ClientHttpResponse, error) {
-	request, err := prepareRequest(context, httpRequest)
+func (service *HttpClientService) TestApiCall(httpRequest httpClientModel.ClientHttpRequest) (*httpClientModel.ClientHttpResponse, error) {
+	request, err := prepareRequest(httpRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +73,8 @@ func (service *HttpClientService) TestApiCall(context *gin.Context, httpRequest 
 	return result, nil
 }
 
-func (service *HttpClientService) DoApiCallWithResponse(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest, outResponse interface{}) error {
-	request, err := prepareRequest(context, httpRequest)
+func (service *HttpClientService) DoApiCallWithResponse(httpRequest httpClientModel.ClientHttpRequest, outResponse interface{}) error {
+	request, err := prepareRequest(httpRequest)
 	if err != nil {
 		return err
 	}
@@ -99,7 +97,7 @@ func (service *HttpClientService) DoApiCallWithResponse(context *gin.Context, ht
 	return err
 }
 
-func prepareRequest(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest) (*http.Request, error) {
+func prepareRequest(httpRequest httpClientModel.ClientHttpRequest) (*http.Request, error) {
 	body := new(bytes.Buffer)
 	if httpRequest.Body != nil {
 		err := json.NewEncoder(body).Encode(httpRequest.Body)

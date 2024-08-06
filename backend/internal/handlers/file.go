@@ -5,13 +5,10 @@ import (
 
 	"github.com/api-relationship-core/backend/internal/domain/models/file"
 	"github.com/api-relationship-core/backend/internal/domain/ports"
-
-	"github.com/gin-gonic/gin"
 )
 
 type FileHandler struct {
 	fileService ports.FileService
-	Context     *gin.Context
 }
 
 func NewFileHandler(fileService ports.FileService) *FileHandler {
@@ -25,7 +22,7 @@ func (handler *FileHandler) ParseToCsv(filename *string) (*file.FileOutput, erro
 		return nil, errors.New("Name parameter can't be empty")
 	}
 
-	result, err := handler.fileService.JsonOutputToCsv(handler.Context, *filename)
+	result, err := handler.fileService.JsonOutputToCsv(*filename)
 	if err != nil {
 		return nil, err
 	}

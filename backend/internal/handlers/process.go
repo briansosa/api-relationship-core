@@ -1,15 +1,15 @@
 package handlers
 
 import (
+	"context"
+
 	"github.com/api-relationship-core/backend/internal/domain/models/process"
 	"github.com/api-relationship-core/backend/internal/domain/ports"
-
-	"github.com/gin-gonic/gin"
 )
 
 type ProcessHandler struct {
 	processService ports.ProcessService
-	Context        *gin.Context
+	Context        *context.Context
 }
 
 func NewProcessHandler(processService ports.ProcessService) *ProcessHandler {
@@ -19,7 +19,7 @@ func NewProcessHandler(processService ports.ProcessService) *ProcessHandler {
 }
 
 func (op *ProcessHandler) StartProcess(process *process.Process) (*process.Process, error) {
-	result, err := op.processService.Process(op.Context, process)
+	result, err := op.processService.Process(process)
 	if err != nil {
 		return nil, err
 	}

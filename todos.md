@@ -13,8 +13,12 @@ crear vista de Operation Schemas
 operation schemas -> crear sidebar
 operation schemas -> agregar buscador de schemas
 operation schemas -> editar nombre
-
-##Lo que falta
 operation schemas -> crear layout de contenido con dos partes: la que muestra todos los datos del curl y la que muestra el schema
 operation schemas -> agregar schema por medio de dos opciones: cargando los datos manual o cargando un comando CURL
 crear y configurar repositorios git para hacer 3 proyectos: back, front y "compiler"
+
+##Lo que falta
+
+
+Comando para ver la DB en web:
+boltdbweb --db-name=./backend/files/db/db_test.db

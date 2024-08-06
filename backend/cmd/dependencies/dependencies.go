@@ -8,7 +8,6 @@ import (
 	"github.com/api-relationship-core/backend/internal/handlers"
 	"github.com/api-relationship-core/backend/pkg/constants"
 	"github.com/api-relationship-core/backend/pkg/environment"
-	"github.com/gin-gonic/gin"
 
 	bbolt_repository "github.com/api-relationship-core/backend/internal/repositories/bbolt"
 	file_repository "github.com/api-relationship-core/backend/internal/repositories/file"
@@ -25,9 +24,10 @@ type Definition struct {
 	// Handlers
 	//
 
-	ProcessHandler         *handlers.ProcessHandler
-	FileHandler            *handlers.FileHandler
-	OperationSchemaHandler *handlers.OperationSchemaHandler
+	ProcessHandler           *handlers.ProcessHandler
+	FileHandler              *handlers.FileHandler
+	OperationSchemaHandler   *handlers.OperationSchemaHandler
+	OperationTemplateHandler *handlers.OperationTemplateHandler
 
 	//
 	// Services
@@ -58,24 +58,14 @@ func NewByEnvironment() Definition {
 }
 
 func (d *Definition) Startup(context context.Context) {
-	// d.ChannelHandler.Context = &context
-	// d.OperationHandler.Context = &context
-	// d.RelationOperationHandler.Context = &context
-	// d.OperationRelationFieldsHandler.Context = &context
-
-	d.FileHandler.Context = &gin.Context{}
-	d.ProcessHandler.Context = &gin.Context{}
+	d.OperationSchemaHandler.Context = &context
+	d.OperationTemplateHandler.Context = &context
 }
 
 func (d *Definition) GetBinds() []interface{} {
 	return []interface{}{
-		// d.ChannelHandler,
-		// d.OperationHandler,
-		// d.RelationOperationHandler,
-		// d.OperationRelationFieldsHandler,
-		// d.FileHandler,
 		d.OperationSchemaHandler,
-		d.ProcessHandler,
+		d.OperationTemplateHandler,
 	}
 }
 
@@ -109,7 +99,7 @@ func initDependencies(environment string) Definition {
 	//
 	// Persistence Services
 	//
-	d.PersistenceService = persistence_srv.NewPersistenceService2(d.OperationRepository, d.FlowRepository, d.ProcessRepository, d.FlowFieldResponseRepository, d.OperationSchemaRepository)
+	d.PersistenceService = persistence_srv.NewPersistenceService(d.OperationRepository, d.FlowRepository, d.ProcessRepository, d.FlowFieldResponseRepository, d.OperationSchemaRepository)
 
 	//
 	// Core Services
@@ -124,6 +114,7 @@ func initDependencies(environment string) Definition {
 	d.ProcessHandler = handlers.NewProcessHandler(d.ProcessService)
 	d.FileHandler = handlers.NewFileHandler(d.FileService)
 	d.OperationSchemaHandler = handlers.NewOperationSchemaHandler(d.PersistenceService, d.HttpClientService)
+	d.OperationTemplateHandler = handlers.NewOperationTemplateHandler(d.PersistenceService, d.HttpClientService)
 
 	return d
 }

@@ -1,22 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"net/http/httptest"
 	"time"
 
 	httpclient "github.com/api-relationship-core/backend/internal/domain/models/http_client"
 	"github.com/api-relationship-core/backend/internal/domain/models/operation"
 	"github.com/api-relationship-core/backend/internal/domain/ports"
-
-	"github.com/gin-gonic/gin"
 )
 
 type OperationSchemaHandler struct {
 	persistenceService ports.PersistenceService
 	httpClientService  ports.HttpClient
-	Context            *gin.Context
+
+	Context *context.Context
 }
 
 func NewOperationSchemaHandler(persistenceService ports.PersistenceService, httpClientService ports.HttpClient) *OperationSchemaHandler {
@@ -63,7 +62,6 @@ func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*ma
 		return nil, fmt.Errorf("Error: Required fields are missing")
 	}
 
-	context, _ := gin.CreateTestContext(httptest.NewRecorder())
 	timeoutValue := operation.Timeout
 	if *timeoutValue == 0 {
 		*timeoutValue = 30 //Default value
@@ -71,7 +69,7 @@ func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*ma
 
 	timeout := time.Duration(*timeoutValue) * time.Second
 
-	response, err := h.httpClientService.TestApiCall(context, httpclient.ClientHttpRequest{
+	response, err := h.httpClientService.TestApiCall(httpclient.ClientHttpRequest{
 		Transport: httpclient.Transport{
 			Url:        *operation.Url,
 			Method:     *operation.MethodType,

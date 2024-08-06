@@ -31,7 +31,7 @@ export const AppRoutes = [
   {
     // path: "/operation_templates",
     // first route of array is a principal in sidebar menu
-    path: ["/operation_templates", "/operation_templates/schema/:schema_id"],
+    path: ["/operation_templates", "/operation_templates/schema/:schema_id", "/operation_templates/schema/:schema_id/template/:id/:mode"],
     component: OperationTemplateView,
     title: "Operation Templates",
     icon: <LaptopOutlined/>,

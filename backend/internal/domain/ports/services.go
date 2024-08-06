@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 
 	"github.com/api-relationship-core/backend/internal/domain/models/flow"
 	"github.com/api-relationship-core/backend/internal/domain/models/operation"
@@ -14,7 +14,7 @@ import (
 )
 
 type ProcessService interface {
-	Process(context *gin.Context, process *process.Process) (*process.Process, error)
+	Process(process *process.Process) (*process.Process, error)
 }
 
 type PersistenceService interface {
@@ -42,17 +42,18 @@ type PersistenceService interface {
 	UpdateOperationSchema(key string, value operationparameter.OperationParameter) error
 	GetOperationSchema(key string) (operationparameter.OperationParameter, error)
 	DeleteOperationSchema(key string) error
+	GetAllKeysOperationSchema(context *context.Context, keys []string) ([]operationparameter.OperationParameter, error)
 	GetAllOperationSchema() ([]operationparameter.OperationParameter, error)
 }
 
 type HttpClient interface {
-	DoApiCall(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest) ([]byte, error)
-	DoApiCallWithResponse(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest, outResponse interface{}) error
-	TestApiCall(context *gin.Context, httpRequest httpClientModel.ClientHttpRequest) (*httpClientModel.ClientHttpResponse, error)
+	DoApiCall(httpRequest httpClientModel.ClientHttpRequest) ([]byte, error)
+	DoApiCallWithResponse(httpRequest httpClientModel.ClientHttpRequest, outResponse interface{}) error
+	TestApiCall(httpRequest httpClientModel.ClientHttpRequest) (*httpClientModel.ClientHttpResponse, error)
 }
 
 type FileService interface {
-	JsonOutputToCsv(context *gin.Context, filename string) (*fileModel.FileOutput, error)
+	JsonOutputToCsv(filename string) (*fileModel.FileOutput, error)
 }
 
 type SecuenceService interface {

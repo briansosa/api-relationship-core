@@ -34,7 +34,7 @@ const CustomSidebar = (props) => {
       }));
     }
   };
-  useEffect(mount, [props.data]);
+  useEffect(mount, [props.data, props.headerExtraRow]);
 
   // handlers
   const handleSearch = (value) => {
@@ -89,7 +89,6 @@ const CustomSidebar = (props) => {
 
   function getMenuItems() {
     if (!props.data) return null;
-
     const items = props.data.map((value, indexda) => {
       return {
         key: value.id,

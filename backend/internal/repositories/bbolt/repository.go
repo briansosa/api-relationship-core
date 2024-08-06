@@ -90,6 +90,35 @@ func (b *BoltRepository) GetBy(key string) (*persistence.KeyValue, error) {
 	return response, err
 }
 
+// GetAllKeys retrieve data by keys
+// @param keys <[]string>
+// @return error
+func (b *BoltRepository) GetAllKeys(keys []string) ([]*persistence.KeyValue, error) {
+	var response []*persistence.KeyValue
+
+	b.Storage.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(b.BucketName))
+		if bucket == nil {
+			err := fmt.Errorf("Bucket %s not found", b.BucketName)
+			return err
+		}
+
+		for _, key := range keys {
+			value := bucket.Get([]byte(key))
+			if value != nil {
+				response = append(response, &persistence.KeyValue{
+					Key:   key,
+					Value: value,
+				})
+			}
+		}
+
+		return nil
+	})
+
+	return response, nil
+}
+
 // GetAll retrieves all bucket's key/value
 // @return ([]string, error)
 func (b *BoltRepository) GetAll() ([]*persistence.KeyValue, error) {
