@@ -1,6 +1,6 @@
 function HomeView() {
     return (
-        <div>Welcome!</div>
+        <div>Welcome!!</div>
     )
 }
 

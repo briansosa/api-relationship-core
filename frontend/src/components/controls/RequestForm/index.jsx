@@ -13,6 +13,7 @@ const RequestForm = (props) => {
     request_type: "",
     timeout: 0,
     url: "",
+    templates_id: [],
   };
 
   const [state, setState] = useState({
@@ -40,6 +41,7 @@ const RequestForm = (props) => {
       request_type: props.entity.request_type,
       timeout: props.entity.timeout,
       url: props.entity.url,
+      templates_id: props.entity.templates_id ?? []
     });
 
   };
@@ -62,6 +64,7 @@ const RequestForm = (props) => {
       request_type: formValues.request_type,
       timeout: formValues.timeout,
       url: formValues.url,
+      templates_id: formValues.templates_id,
     };
 
     props.onConfirm(row);

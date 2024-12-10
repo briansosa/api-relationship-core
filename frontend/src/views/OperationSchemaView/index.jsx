@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Layout, Row, Col, Divider, Button, Card } from "antd";
+import { Layout, Row, Col, Divider, Button, Card, message } from "antd";
 import ShortUniqueId from "short-unique-id";
 const { Content } = Layout;
 import {
@@ -35,6 +35,7 @@ const OperationSchemaView = () => {
     response: null,
     timeout: 0,
     url: "",
+    templates_id: [],
   };
 
   //hooks
@@ -105,6 +106,7 @@ const OperationSchemaView = () => {
       response: state.entity.response,
       timeout: state.entity.timeout != 0 ? state.entity.timeout : 30,
       url: state.entity.url,
+      templates_id: state.entity.templates_id,
     });
 
     UpdateSchema(data);
@@ -149,6 +151,7 @@ const OperationSchemaView = () => {
       body: curlJson.body,
       headers: curlJson.headers,
       query_params: curlJson.query_params,
+      templates_id: state.entity.templates_id,
     });
 
     InsertSchema(data);

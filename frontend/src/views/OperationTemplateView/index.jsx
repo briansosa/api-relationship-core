@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import CustomSidebar from "../../components/common/CustomSidebar";
-import RequestForm from "../../components/controls/RequestForm";
-import { Layout, Row, Col, Empty, Space, Select } from "antd";
+import TemplateForm from "../../components/controls/TemplateForm";
+import { Layout, Row, Col, Empty, Space, Select, Tabs } from "antd";
+import { DatabaseOutlined, SettingOutlined } from '@ant-design/icons';
+import EditableTable from "../../components/common/EditableTable";
 const { Content } = Layout;
 import { GetAllOperationSchema } from "../../../wailsjs/go/handlers/OperationSchemaHandler";
 
@@ -10,6 +11,8 @@ import {
   GetOperationTemplate,
   GetAllKeysOperationTemplates,
 } from "../../../wailsjs/go/handlers/OperationTemplateHandler";
+
+import SidebarTemplate from "../../components/common/SidebarTemplate";
 
 function OperationTemplateView() {
   const urlParams = useParams();
@@ -67,9 +70,9 @@ function OperationTemplateView() {
 
   // Handlers
 
-  function handleSidebarSelect(item) {
+  function handleSidebarSelect(item) {    
     navigate(
-      `/operation_templates/schema/${state.schemaId}/template/${item.key}/edit`
+      `/operation_templates/schema/${state.schemaId}/template/${item.id}/edit`
     );
   }
 
@@ -110,13 +113,23 @@ function OperationTemplateView() {
   }
 
   function GetTemplate(id) {
+    const schema = state.listSchemas.find((schema) => schema.id == state.schemaId);
+
     GetOperationTemplate(id)
       .then((result) => {
+
+        const templateEntity = {
+          ...result,
+          headers: result.headers || schema.headers,
+          body: result.body || schema.body,
+          query_params: result.query_params || schema.query_params,
+        }
         console.log("template", result);
+        console.log("templateEntity", templateEntity);
         setState((prevState) => {
           return {
             ...prevState,
-            entity: result,
+            entity: templateEntity,
             empty: false,
           };
         });
@@ -131,7 +144,13 @@ function OperationTemplateView() {
 
   const onChangeSelect = (value) => {
     const schema = state.listSchemas.find((schema) => schema.id == value);
-    if (schema.templates_id.length == 0) {
+    
+    if (!schema) {
+      console.error('Schema no encontrado:', value);
+      return;
+    }
+
+    if (!schema.templates_id || schema.templates_id.length === 0) {
       setState((prevState) => ({
         ...prevState,
         schemaId: schema.id,
@@ -147,57 +166,56 @@ function OperationTemplateView() {
     return (option.label ?? "").toLowerCase().includes(input.toLowerCase());
   };
 
-  const selectSchemaInput = (
-    <Select
-      showSearch
-      placeholder="Select a schema"
-      defaultValue={null}
-      optionFilterProp="children"
-      onChange={onChangeSelect}
-      filterOption={filterOptionSelect}
-      options={state.listSchemas.map((value) => {
-        return { value: value.id, label: value.name };
-      })}
-    />
-  );
+  const handleOnChangeTemplate = (row) => {
+    setState((prevState) => ({
+      ...prevState,
+      entity: {
+        ...row,
+      },
+    }));
+  };
+
+  const handleOnChangeTemplateSidebar = (params) => {
+    const paramsArray = Object.entries(params.target.value).map(([name, type]) => ({
+      name,
+      type
+    }));
+
+    setState((prevState) => ({
+      ...prevState,
+      entity: {
+        ...prevState.entity,
+        params: paramsArray,
+      },
+    }));
+  };
 
   return (
-    <>
-      <Row style={{ height: "100%" }}>
-        <Col style={{ height: "100%" }} span={4}>
-          <CustomSidebar
-            data={state.listTemplates}
-            title="Operation Templates"
-            searchMode={true}
-            onSelect={handleSidebarSelect}
-            headerExtraRow={selectSchemaInput}
-          />
-        </Col>
-        <Col span={20} style={{ height: "100%" }}>
-          {state.empty ? (
-            <Space align={"center"} style={{ height: "100%" }}>
-              <Content>
-                <Empty></Empty>
-              </Content>
-            </Space>
-          ) : (
-            <>
-              <Row>
-                <Content>
-                  <RequestForm
-                    entity={state.entity}
-                    // onConfirm={handleSubmit}
-                  />
-                </Content>
-              </Row>
-              <Row>
-                <div>AAAA</div>
-              </Row>
-            </>
-          )}
-        </Col>
-      </Row>
-    </>
+    <Layout style={{ height: '100%' }}>
+      <SidebarTemplate
+        schemas={state.listSchemas}
+        templates={state.listTemplates}
+        parameters={state.entity.params}
+        onSchemaSelect={onChangeSelect}
+        onTemplateSelect={handleSidebarSelect}
+        selectedSchemaId={state.schemaId}
+        onParametersChange={handleOnChangeTemplateSidebar}
+      />
+      <Layout style={{ padding: '24px', background: '#fff' }}>
+        {state.empty ? (
+          <Space align="center" style={{ height: "100%", width: "100%", justifyContent: "center" }}>
+            <Empty description="Selecciona un template para comenzar" />
+          </Space>
+        ) : (
+          <Content style={{ background: "#fff", padding: "24px", borderRadius: "8px" }}>
+            <TemplateForm
+              entity={state.entity}
+              onChange={handleOnChangeTemplate}
+            />
+          </Content>
+        )}
+      </Layout>
+    </Layout>
   );
 }
 

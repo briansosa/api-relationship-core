@@ -21,7 +21,8 @@
     "react-router-dom": "^6.23.1",
     "reactflow": "^11.11.3",
     "short-unique-id": "^5.2.0",
-    "yargs-parser": "^21.1.1"
+    "yargs-parser": "^21.1.1",
+    "styled-components": "^6.1.8"
   },
   "devDependencies": {
     "@emotion/react": "^11.11.1",

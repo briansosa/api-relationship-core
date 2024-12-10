@@ -16,7 +16,7 @@ type Operation struct {
 	Timeout     *int                    `json:"timeout"`
 	QueryParams *map[string]interface{} `json:"query_params,"`
 	Headers     *map[string]interface{} `json:"headers,omitempty"`
-	Body        *json.RawMessage        `json:"body,omitempty"`     // TODO: ver tipo de datos
+	Body        *json.RawMessage        `json:"body"`               // TODO: ver tipo de datos
 	Response    *json.RawMessage        `json:"response,omitempty"` // TODO: ver tipo de datos
 	Schema      *json.RawMessage        `json:"schema,omitempty"`   // TODO: ver tipo de datos
 	Templates   *[]string               `json:"templates_id,omitempty"`

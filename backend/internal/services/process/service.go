@@ -586,6 +586,8 @@ func fillOperationWithValue(operation *operation.OperationProcess, param operati
 		operation.QueryParams[param.Name] = value
 	case "header":
 		operation.Headers[param.Name] = value
+	case "path":
+		operation.Url = strings.Replace(operation.Url, "{"+param.Name+"}", value.(string), 1)
 	case "body":
 		// TODO hacer reemplazo de body
 	}

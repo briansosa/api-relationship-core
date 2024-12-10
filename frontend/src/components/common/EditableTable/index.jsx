@@ -6,6 +6,15 @@ const EditableTable = (props) => {
   const [tableData, setTableData] = useState([]);
 
   useEffect(() => {
+    if(Array.isArray(props.data)) {
+      setTableData(props.data.map((value, index) => ({
+        key: index,
+        property: value.name,
+        value: value.type,
+      })))
+      return
+    }
+
     setTableData(Object.entries(props.data).map(([key, value], index) => ({
       key: index,
       property: key,
@@ -65,42 +74,52 @@ const EditableTable = (props) => {
     }
   };
 
-  const columns = [
-    {
-      title: props.titleKey,
-      dataIndex: 'property',
-      key: 'property',
-      render: (text, record) => (
-        <Input
-          value={text}
-          onChange={(e) => handleInputChange(record.key, 'property', e.target.value)}
-          onBlur={() => handleInputBlur(record.key)}
-          onPressEnter={() => handleInputBlur(record.key)}
-        />
-      ),
-    },
-    {
-      title: props.titleValue,
-      dataIndex: 'value',
-      key: 'value',
-      render: (text, record) => (
-        <Input
-          value={text}
-          onChange={(e) => handleInputChange(record.key, 'value', e.target.value)}
-          onBlur={() => handleTableChange(tableData)}
-          onPressEnter={() => handleTableChange(tableData)}
-        />
-      ),
-    },
-    {
+  const getColumns = () => {
+    const baseColumns = [
+      {
+        title: props.titleKey,
+        dataIndex: 'property',
+        key: 'property',
+        render: (text, record) => (
+          <Input
+            value={text}
+            onChange={(e) => handleInputChange(record.key, 'property', e.target.value)}
+            onBlur={() => handleInputBlur(record.key)}
+            onPressEnter={() => handleInputBlur(record.key)}
+          />
+        ),
+      },
+      {
+        title: props.titleValue,
+        dataIndex: 'value',
+        key: 'value',
+        render: (text, record) => (
+          <Input
+            value={text}
+            onChange={(e) => handleInputChange(record.key, 'value', e.target.value)}
+            onBlur={() => handleTableChange(tableData)}
+            onPressEnter={() => handleTableChange(tableData)}
+          />
+        ),
+      }
+    ];
+
+    if (props.actions) {
+      baseColumns.push(...props.actions);
+    }
+
+    baseColumns.push({
+      key: 'delete',
       render: (text, record) => (
         <Button
           icon={<DeleteOutlined />}
           onClick={() => handleDeleteRow(record.key)}
         />
       ),
-    },
-  ];
+    });
+
+    return baseColumns;
+  };
 
   const footer = () => {
     return (
@@ -118,7 +137,7 @@ const EditableTable = (props) => {
   return (
     <>
       <Table
-        columns={columns}
+        columns={getColumns()}
         dataSource={tableData}
         pagination={false}
         rowKey="key"
