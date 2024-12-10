@@ -58,6 +58,18 @@ func (h *OperationTemplateHandler) InsertOperationTemplate(template operationpar
 		return nil, err
 	}
 
+	operation, err := h.persistenceService.GetOperation(*template.SchemaID)
+	if err != nil {
+		return nil, err
+	}
+
+	*operation.Templates = append(*operation.Templates, *result.ID)
+
+	err = h.persistenceService.UpdateOperation(*operation.ID, operation)
+	if err != nil {
+		return nil, err
+	}
+
 	return &result, nil
 }
 

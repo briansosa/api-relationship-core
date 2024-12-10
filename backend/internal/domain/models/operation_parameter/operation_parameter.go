@@ -4,6 +4,7 @@ import "encoding/json"
 
 type OperationParameter struct {
 	ID          *string                 `json:"id"`
+	SchemaID    *string                 `json:"schema_id"`
 	Name        *string                 `json:"name"`
 	Params      *[]Parameters           `json:"params"`
 	Url         *string                 `json:"url"`

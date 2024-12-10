@@ -18,6 +18,7 @@ import ParameterizedEditableTable from '../ParameterizedEditableTable';
 
 const TemplateForm = (props) => {
   const entityInit = {
+    id: "",
     body: "",
     headers: null,
     method_type: "",
@@ -47,6 +48,7 @@ const TemplateForm = (props) => {
     setState((prevState) => ({ ...prevState, entity: props.entity }));
 
     formSet({
+      id: props.entity.id,
       body:
         props.entity.body && props.entity.body != null
           ? JSON.stringify(props.entity.body, null, 2)
@@ -74,6 +76,7 @@ const TemplateForm = (props) => {
     // TODO validate form
 
     const row = {
+      id: props.entity.id,
       body: formValues.body ? JSON.parse(formValues.body) : null,
       headers:
         Object.keys(formValues.headers).length == 0 ? null : formValues.headers,
@@ -89,7 +92,7 @@ const TemplateForm = (props) => {
       params: formValues.params,
     };
 
-    props.onConfirm(row);
+    props.onSave(row);
   };
 
   const handlerOnChange = (event, deleted) => {
@@ -135,6 +138,7 @@ const TemplateForm = (props) => {
     }
 
     const row = {
+      id: props.entity.id,
       body: updatedValues.body ? JSON.parse(updatedValues.body) : null,
       headers:
         Object.keys(updatedValues.headers).length == 0 ? null : updatedValues.headers,
@@ -165,19 +169,13 @@ const TemplateForm = (props) => {
     }
   };
 
-  const convertToParameter = (paramName, paramType = 'string') => {
+  const convertToParameter = (paramName, paramType = 'path') => {
     const currentUrl = formValues.url;
     const newUrl = 
       currentUrl.substring(0, selectionStart) + 
       `{${paramName}}` + 
       currentUrl.substring(selectionEnd);
 
-    // Actualizar los parámetros
-    const newParams = [...(formValues.params || []), {
-      name: paramName,
-      type: paramType,
-      location: 'path'
-    }];
 
     const event = {
       target: {
@@ -342,7 +340,7 @@ const TemplateForm = (props) => {
         </Col>
         <Col span={4}>
           <Button type="primary" htmlType="submit" onClick={handleSubmit}>
-            Send
+            Save Template
           </Button>
         </Col>
       </Row>

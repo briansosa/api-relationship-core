@@ -1,6 +1,6 @@
 import React from 'react';
-import { Tabs, Select, Layout } from 'antd';
-import { DatabaseOutlined, SettingOutlined } from '@ant-design/icons';
+import { Tabs, Select, Layout, Button, Space, Dropdown } from 'antd';
+import { DatabaseOutlined, SettingOutlined, PlusOutlined, MoreOutlined, DeleteOutlined } from '@ant-design/icons';
 import EditableTable from '../EditableTable';
 
 const { Sider } = Layout;
@@ -35,9 +35,24 @@ function SidebarTemplate({
   onSchemaSelect,
   onTemplateSelect,
   onParametersChange,
-  selectedSchemaId
+  selectedSchemaId,
+  onNewTemplate,
+  onDeleteTemplate
 }) {
   const [hoveredItem, setHoveredItem] = React.useState(null);
+
+  const getDropdownItems = (template) => ({
+    items: [
+      {
+        key: 'delete',
+        icon: <DeleteOutlined />,
+        label: 'Eliminar',
+        onClick: () => {
+          onDeleteTemplate(template);
+        }
+      }
+    ]
+  });
 
   const items = [
     {
@@ -50,7 +65,7 @@ function SidebarTemplate({
       ),
       children: (
         <>
-          <div style={{ padding: '0 8px', marginBottom: '16px' }}>
+          <Space direction="vertical" style={{ width: '100%', padding: '0 8px' }}>
             <Select
               showSearch
               placeholder="Seleccionar schema"
@@ -66,20 +81,50 @@ function SidebarTemplate({
                 title: schema.name
               }))}
             />
-          </div>
+            {selectedSchemaId && (
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={onNewTemplate}
+                style={{ width: '100%' }}
+              >
+                Nuevo Template
+              </Button>
+            )}
+          </Space>
           <div style={styles.scrollableDiv}>
             {templates.map(template => (
               <div
                 key={template.id}
-                onClick={() => onTemplateSelect(template)}
                 onMouseEnter={() => setHoveredItem(template.id)}
                 onMouseLeave={() => setHoveredItem(null)}
                 style={{
                   ...styles.templateItem,
-                  ...(hoveredItem === template.id ? styles.templateItemHover : {})
+                  ...(hoveredItem === template.id ? styles.templateItemHover : {}),
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
-                {template.name}
+                <div
+                  onClick={() => onTemplateSelect(template)}
+                  style={{ flex: 1, cursor: 'pointer' }}
+                >
+                  {template.name}
+                </div>
+                <Dropdown
+                  menu={getDropdownItems(template)}
+                  trigger={['click']}
+                >
+                  <MoreOutlined 
+                    style={{ 
+                      padding: '4px',
+                      cursor: 'pointer',
+                      visibility: hoveredItem === template.id ? 'visible' : 'hidden'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Dropdown>
               </div>
             ))}
           </div>

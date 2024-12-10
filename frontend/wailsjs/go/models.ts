@@ -55,6 +55,7 @@ export namespace operationparameter {
 	}
 	export class OperationParameter {
 	    id?: string;
+	    schema_id?: string;
 	    name?: string;
 	    params?: Parameters[];
 	    url?: string;
@@ -72,6 +73,7 @@ export namespace operationparameter {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.schema_id = source["schema_id"];
 	        this.name = source["name"];
 	        this.params = this.convertValues(source["params"], Parameters);
 	        this.url = source["url"];
