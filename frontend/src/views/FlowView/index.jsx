@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from 'antd';
-import { ReactFlow } from 'reactflow';
+import { ReactFlow, Background, Controls, useNodesState } from 'reactflow';
 import 'reactflow/dist/style.css';
 import TemplateSidebar from '../../components/common/TemplateSidebar';
 
@@ -9,13 +9,15 @@ import { GetAllSchemasWithTemplates } from '../../../wailsjs/go/handlers/Operati
 const initialNodes = [
   {
     id: '1',
+    type: 'default',
     position: { x: 100, y: 100 },
     data: { label: 'Nodo 1' },
+    draggable: true,
   },
 ];
 
 const FlowView = () => {
-  const [nodes, setNodes] = useState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [loading, setLoading] = useState(false);
   const [schemas, setSchemas] = useState([]);
 
@@ -23,30 +25,31 @@ const FlowView = () => {
     loadSchemas();
   }, []);
 
-  // TODO: Implementar en backend
   const loadSchemas = async () => {
     setLoading(true);
- 
-    GetAllSchemasWithTemplates().then((result) => {
-      console.log("result schemas with templates", result);
-      
-      setSchemas(result);
-    }).catch((error) => {
-      console.error('Error loading schemas:', error);
-    }).finally(() => {
-      setLoading(false);
-    });
+    GetAllSchemasWithTemplates()
+      .then((result) => {
+        console.log("result schemas with templates", result);
+        setSchemas(result);
+      })
+      .catch((error) => {
+        console.error('Error loading schemas:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const handleTemplateSelect = (template) => {
-    // Crear nuevo nodo en el canvas
     const newNode = {
       id: template.id,
-      position: { x: 100, y: 100 }, // Posición inicial
+      type: 'default',
+      position: { x: Math.random() * 500, y: Math.random() * 500 }, // Posición aleatoria
       data: { 
         label: template.name,
         template: template
-      }
+      },
+      draggable: true,
     };
     
     setNodes(prev => [...prev, newNode]);
@@ -61,7 +64,17 @@ const FlowView = () => {
       />
       <Layout>
         <div style={{ width: '100%', height: '100%' }}>
-          <ReactFlow nodes={nodes} />
+          <ReactFlow 
+            nodes={nodes}
+            onNodesChange={onNodesChange}
+            fitView
+            panOnDrag={true}
+            zoomOnScroll={true}
+            panOnScroll={true}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
         </div>
       </Layout>
     </Layout>
