@@ -1,6 +1,8 @@
 package operationparameter
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type OperationParameter struct {
 	ID          *string                 `json:"id"`

@@ -8,6 +8,7 @@ import (
 
 	httpclient "github.com/api-relationship-core/backend/internal/domain/models/http_client"
 	"github.com/api-relationship-core/backend/internal/domain/models/operation"
+	operationparameter "github.com/api-relationship-core/backend/internal/domain/models/operation_parameter"
 	"github.com/api-relationship-core/backend/internal/domain/ports"
 )
 
@@ -52,6 +53,39 @@ func (h *OperationSchemaHandler) InsertOperationSchema(operation operation.Opera
 	result, err := h.persistenceService.InsertOperation(operation)
 	if err != nil {
 		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (h *OperationSchemaHandler) GetAllSchemasWithTemplates() (*[]operation.SchemaTemplate, error) {
+	var result []operation.SchemaTemplate
+
+	operations, err := h.persistenceService.GetAllOperations()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, operationSchemas := range operations {
+		schemaTemplate := operation.SchemaTemplate{
+			Operation: operationSchemas,
+		}
+
+		listTemplates := make([]operationparameter.OperationParameter, 0)
+		if operationSchemas.Templates != nil {
+			for _, templateId := range *operationSchemas.Templates {
+				templateOperation, errTemplate := h.persistenceService.GetOperationSchema(templateId)
+				if errTemplate != nil {
+					continue
+					//return nil, errTemplate
+				}
+
+				listTemplates = append(listTemplates, templateOperation)
+			}
+		}
+
+		schemaTemplate.ListTemplates = &listTemplates
+		result = append(result, schemaTemplate)
 	}
 
 	return &result, nil

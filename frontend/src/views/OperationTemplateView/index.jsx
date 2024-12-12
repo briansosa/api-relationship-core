@@ -161,7 +161,6 @@ function OperationTemplateView() {
   function GetAllKeysTemplates(schema) {
     GetAllKeysOperationTemplates(schema.templates_id)
       .then((result) => {
-        console.log("result keys", result);
         setState((prevState) => {
           return {
             ...prevState,

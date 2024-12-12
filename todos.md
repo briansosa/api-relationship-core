@@ -16,15 +16,16 @@ operation schemas -> editar nombre
 operation schemas -> crear layout de contenido con dos partes: la que muestra todos los datos del curl y la que muestra el schema
 operation schemas -> agregar schema por medio de dos opciones: cargando los datos manual o cargando un comando CURL
 crear y configurar repositorios git para hacer 3 proyectos: back, front y "compiler"
-
-##Lo que estoy ahora
 Operation Template -> Estoy en la vista de templates, viendo como se manejan los parametros en relacion a los templates
-
-
-## Lo que falta
 Operation Template -> Save Template
 Operation Template -> Create and Delete Templates
 Operation Template -> Revisar si el backend soporta bodys, creo que no. Si no lo soporta entonces no hacemos los parametros de body ahora
+
+##Lo que estoy ahora
+Diseñar el layout de la vista de flows
+
+## Lo que falta
+
 
 
 

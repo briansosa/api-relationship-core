@@ -6,6 +6,8 @@ export function DeleteOperationSchema(arg1:string):Promise<void>;
 
 export function GetAllOperationSchema():Promise<any>;
 
+export function GetAllSchemasWithTemplates():Promise<any>;
+
 export function GetOperationSchema(arg1:string):Promise<operation.Operation>;
 
 export function InsertOperationSchema(arg1:operation.Operation):Promise<operation.Operation>;

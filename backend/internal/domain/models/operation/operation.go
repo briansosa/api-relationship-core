@@ -32,6 +32,11 @@ type OperationProcess struct {
 	Body        json.RawMessage        `json:"body"` // TODO: ver tipo de datos
 }
 
+type SchemaTemplate struct {
+	Operation
+	ListTemplates *[]operationparameter.OperationParameter `json:"list_templates"`
+}
+
 func NewOperationProcess(operation operationparameter.OperationParameter) OperationProcess {
 	return OperationProcess{
 		Url:         *operation.Url,

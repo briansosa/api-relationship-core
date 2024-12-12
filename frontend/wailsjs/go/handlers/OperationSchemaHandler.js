@@ -10,6 +10,10 @@ export function GetAllOperationSchema() {
   return window['go']['handlers']['OperationSchemaHandler']['GetAllOperationSchema']();
 }
 
+export function GetAllSchemasWithTemplates() {
+  return window['go']['handlers']['OperationSchemaHandler']['GetAllSchemasWithTemplates']();
+}
+
 export function GetOperationSchema(arg1) {
   return window['go']['handlers']['OperationSchemaHandler']['GetOperationSchema'](arg1);
 }

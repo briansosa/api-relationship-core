@@ -1,37 +1,71 @@
-// import React from 'react';
-// import ReactFlow, { addEdge, Background, Controls, MiniMap, useNodesState, useEdgesState } from 'reactflow';
-// import 'reactflow/dist/style.css';
+import React, { useState, useEffect } from 'react';
+import { Layout } from 'antd';
+import { ReactFlow } from 'reactflow';
+import 'reactflow/dist/style.css';
+import TemplateSidebar from '../../components/common/TemplateSidebar';
 
-// const initialNodes = [
-//   { id: '1', position: { x: 250, y: 0 }, data: { label: 'Input Node' }, type: 'input' },
-//   { id: '2', position: { x: 100, y: 100 }, data: { label: 'Default Node' } },
-//   { id: '3', position: { x: 400, y: 100 }, data: { label: 'Output Node' }, type: 'output' },
-// ];
+import { GetAllSchemasWithTemplates } from '../../../wailsjs/go/handlers/OperationSchemaHandler';
 
-// const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }];
+const initialNodes = [
+  {
+    id: '1',
+    position: { x: 100, y: 100 },
+    data: { label: 'Nodo 1' },
+  },
+];
 
+const FlowView = () => {
+  const [nodes, setNodes] = useState(initialNodes);
+  const [loading, setLoading] = useState(false);
+  const [schemas, setSchemas] = useState([]);
 
-function FlowView() {
-//   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-//   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  useEffect(() => {
+    loadSchemas();
+  }, []);
 
-//   const onConnect = (params) => setEdges((eds) => addEdge(params, eds));
+  // TODO: Implementar en backend
+  const loadSchemas = async () => {
+    setLoading(true);
+ 
+    GetAllSchemasWithTemplates().then((result) => {
+      console.log("result schemas with templates", result);
+      
+      setSchemas(result);
+    }).catch((error) => {
+      console.error('Error loading schemas:', error);
+    }).finally(() => {
+      setLoading(false);
+    });
+  };
+
+  const handleTemplateSelect = (template) => {
+    // Crear nuevo nodo en el canvas
+    const newNode = {
+      id: template.id,
+      position: { x: 100, y: 100 }, // Posición inicial
+      data: { 
+        label: template.name,
+        template: template
+      }
+    };
+    
+    setNodes(prev => [...prev, newNode]);
+  };
 
   return (
-    <div>a</div>
-    // <ReactFlow
-    //   nodes={nodes}
-    //   edges={edges}
-    //   onNodesChange={onNodesChange}
-    //   onEdgesChange={onEdgesChange}
-    //   onConnect={onConnect}
-    //   fitView
-    // >
-    //   <Background />
-    //   <Controls />
-    //   <MiniMap />
-    // </ReactFlow>
+    <Layout style={{ height: '100vh' }}>
+      <TemplateSidebar
+        loading={loading}
+        schemas={schemas}
+        onTemplateSelect={handleTemplateSelect}
+      />
+      <Layout>
+        <div style={{ width: '100%', height: '100%' }}>
+          <ReactFlow nodes={nodes} />
+        </div>
+      </Layout>
+    </Layout>
   );
-}
+};
 
 export default FlowView;
