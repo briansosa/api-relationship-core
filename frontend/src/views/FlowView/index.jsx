@@ -29,13 +29,6 @@ const FlowView = () => {
   const [loading, setLoading] = useState(false);
   const [schemas, setSchemas] = useState([]);
 
-  // Configuración inicial del viewport
-  const [viewport, setViewport] = useState({ 
-    x: 0,
-    y: 0,
-    zoom: 0.5  // Zoom inicial más lejano
-  });
-
   useEffect(() => {
     loadSchemas();
     setNodes([{
@@ -130,10 +123,11 @@ const FlowView = () => {
             onNodesDelete={handleNodesDelete}
             nodesDraggable={true}
             panOnDrag={true}
-            defaultViewport={viewport}
+            defaultViewport={{ x: 100, y: 100, zoom: 0.4 }}
             minZoom={0.2}
             maxZoom={1.5}
             fitView
+            fitViewOptions={{ padding: 50, minZoom: 0.8 }}
             deleteKeyCode={['Backspace', 'Delete']}
             zoomOnScroll={true}
             panOnScroll={false}
