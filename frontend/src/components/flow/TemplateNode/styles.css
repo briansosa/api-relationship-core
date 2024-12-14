@@ -1,0 +1,77 @@
+.template-node {
+  min-width: 400px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: white;
+  padding: 0;
+}
+
+.template-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.template-node-content {
+  display: flex;
+  min-height: 100px;
+}
+
+.parameters-panel,
+.response-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  margin: 0;
+}
+
+.parameters-list,
+.response-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style-type: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.parameter-item,
+.response-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  padding: 2px;
+  list-style-type: none !important;
+  margin: 0 !important;
+}
+
+.parameter-item:hover,
+.response-item:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.panel-divider {
+  height: auto !important;
+  margin: 0 !important;
+}
+
+.response-item .ant-checkbox-wrapper {
+  margin-right: 4px;
+}
+
+.response-item .ant-tag {
+  font-size: 10px;
+  line-height: 14px;
+  margin-left: auto;
+}
+
+/* Ocultar los asteriscos de los handles */
+.react-flow__handle::after {
+  display: none;
+} 
