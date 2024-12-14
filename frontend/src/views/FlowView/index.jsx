@@ -4,6 +4,7 @@ import { ReactFlow, Background, Controls, useNodesState, useEdgesState, addEdge 
 import 'reactflow/dist/style.css';
 import TemplateSidebar from '../../components/common/TemplateSidebar';
 import TemplateNode from '../../components/flow/TemplateNode';
+import InputNode from '../../components/flow/InputNode';
 
 import { GetAllSchemasWithTemplates } from '../../../wailsjs/go/handlers/OperationSchemaHandler';
 
@@ -18,7 +19,8 @@ const initialNodes = [
 ];
 
 const nodeTypes = {
-  template: TemplateNode
+  template: TemplateNode,
+  input: InputNode
 };
 
 const FlowView = () => {
@@ -36,6 +38,13 @@ const FlowView = () => {
 
   useEffect(() => {
     loadSchemas();
+    setNodes([{
+      id: 'inputs',
+      type: 'input',
+      position: { x: 100, y: 100 },
+      data: {},
+      draggable: true
+    }]);
   }, []);
 
   const loadSchemas = async () => {

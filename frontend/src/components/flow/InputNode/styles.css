@@ -1,0 +1,83 @@
+.react-flow__node-input {
+    border: none;
+    width: 300px;
+    min-height: 50px;
+    display: flex;
+    padding: 0;
+}
+
+.input-node {
+    border: 1px solid #d9d9d9;
+    background: white;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.input-node-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+    padding: 8px;
+}
+
+.input-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+}
+
+.add-input-button {
+    border-radius: 50%;
+    padding: 0;
+    border-color: #1890ff;
+    max-height: 16px;
+    max-width: 16px;
+}
+
+.input-list {
+    padding: 4px;
+    padding-right: 14px;
+}
+
+.input-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+    position: relative;
+    text-align: left;
+}
+
+.input-item .name-input {
+    width: 100px;
+    border: 1px solid #d9d9d9;
+    border-radius: 2px;
+    padding: 2px 4px;
+    font-size: 12px;
+}
+
+.input-item .ant-typography {
+    width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.connection-handle {
+    margin-left: 8px;
+    width: 12px;
+    height: 12px;
+    background-color: #1890ff;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+} 
+
+.input-node .ant-card-body {
+    padding: 0;
+}
+
+.react-flow__handle-right {
+    top: 28%;
+}
