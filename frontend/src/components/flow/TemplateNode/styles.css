@@ -1,5 +1,7 @@
 .template-node {
-  min-width: 400px;
+  height: 100%;
+  width: 100%;
+  min-width: 300px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   background: white;
@@ -45,9 +47,12 @@
   align-items: center;
   gap: 4px;
   position: relative;
-  padding: 2px;
+  padding: 6px 16px;
+  margin: 2px 0;
   list-style-type: none !important;
-  margin: 0 !important;
+  border-radius: 4px;
+  padding-right: 3px;
+  padding-left: 3px;
 }
 
 .parameter-item:hover,
@@ -75,3 +80,106 @@
 .react-flow__handle::after {
   display: none;
 } 
+
+.parameter-item.can-drop {
+  background-color: rgba(24, 144, 255, 0.1);
+  border: 1px dashed #1890ff;
+  border-radius: 4px;
+}
+
+.parameter-item,
+.response-item {
+  cursor: grab;
+  user-select: none;
+}
+parameter-item,
+.response-item:active {
+  cursor: grabbing;
+}
+
+/* Mejorar visibilidad de los handles */
+.react-flow__handle {
+  width: 16px;
+  height: 16px;
+  background-color: #1890ff;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.react-flow__handle:hover {
+  opacity: 1;
+  background-color: #40a9ff;
+  cursor: crosshair;
+}
+
+/* Mejorar la visualización de las conexiones */
+.react-flow__handle.connecting {
+  background: #ff9800;
+}
+
+.react-flow__handle.valid {
+  background: #4caf50;
+}
+
+.react-flow__handle.invalid {
+  background: #f44336;
+}
+
+/* Ocultar el handle cuando no está en uso */
+.react-flow__handle:not(.connecting):not(:hover) {
+  opacity: 0.5;
+} 
+
+.template-node .ant-card-body {
+  padding: 0;
+}
+
+.parameters-panel {
+  padding: 0;
+}
+
+.connection-handle {
+  width: 13px;
+  height: 13px;
+  min-width: 13px;
+  min-height: 13px;
+  background-color: #1890ff;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);
+}
+
+.connection-handle:hover {
+  background-color: #40a9ff;
+  cursor: crosshair;
+}
+
+.parameter-item .react-flow__handle {
+  left: -8px;
+}
+
+.response-item .react-flow__handle {
+  right: -8px;
+}
+
+.connection-handle::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  bottom: -4px;
+  left: -4px;
+  cursor: crosshair;
+}
+
+.connection-handle {
+  opacity: 0.8;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.connection-handle:hover {
+  opacity: 1;
+  transform: scale(1.2) translateX(4px);
+}

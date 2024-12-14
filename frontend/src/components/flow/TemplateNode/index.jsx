@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Handle, Position } from 'reactflow';
-import { Card, Divider, Typography, Tag, Checkbox, Button } from 'antd';
-import { CloseOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, memo } from 'react';
+import { Handle, Position, NodeResizer } from 'reactflow';
+import { Card, Divider, Typography, Tag, Checkbox } from 'antd';
 import './styles.css';
 
 const { Text } = Typography;
 
-const TemplateNode = ({ data }) => {
-  const { template, responseSchema } = data;
+const TemplateNode = ({ data, selected }) => {
+  const { template, responseSchema, onConnect } = data;
   const [responseFields, setResponseFields] = useState([]);
 
   // Función recursiva para extraer campos del schema
@@ -83,69 +82,133 @@ const TemplateNode = ({ data }) => {
     return colors[type] || 'default';
   };
 
+  // Manejadores de drag and drop
+  const onDragStart = (event, field) => {
+    event.stopPropagation();
+    
+    // Iniciamos la conexión usando el handle directamente
+    const handleElement = document.getElementById(`resp-${field.name}`);
+    if (handleElement) {
+      handleElement.dispatchEvent(new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0
+      }));
+    }
+  };
+
+  const onDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.add('can-drop');
+  };
+
+  const onDragLeave = (event) => {
+    event.currentTarget.classList.remove('can-drop');
+  };
+
+  const onDrop = (event, param) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.remove('can-drop');
+    
+    // Simulamos el mouseup en el handle de destino
+    const handleElement = document.getElementById(`param-${param.type}-${param.name}`);
+    if (handleElement) {
+      handleElement.dispatchEvent(new MouseEvent('mouseup', {
+        bubbles: true,
+        cancelable: true,
+        button: 0
+      }));
+    }
+  };
+
   return (
-    <Card 
-      className="template-node"
-      title={
-        <div className="template-node-header">
-          <Tag color={getMethodColor(template.method_type)}>
-            {template.method_type}
-          </Tag>
-          <Text strong style={{ flex: 1, textAlign: 'center' }}>
-            {template.name}
-          </Text>
-        </div>
-      }
-      size="small"
-    >
-      <div className="template-node-content">
-        {/* Panel Izquierdo - Parámetros */}
-        <div className="parameters-panel">
-          <Text strong>Parámetros</Text>
-          <div className="parameters-list">
-            {template.params?.map((param, index) => (
-              <div key={`${param.type}-${param.name}-${index}`} className="parameter-item">
-                <Handle
-                  type="target"
-                  position={Position.Left}
-                  id={`param-${param.type}-${param.name}`}
-                  style={{ visibility: 'visible' }}
-                />
-                <Tag color={getParamTypeColor(param.type)}>
-                  {param.type === 'query_param' ? 'query' : param.type}
-                </Tag>
-                <Text>{param.name}</Text>
-              </div>
-            ))}
+    <>
+      <NodeResizer 
+        minWidth={300}
+        maxWidth={800}
+        minHeight={200}
+        isVisible={selected}
+        handleStyle={{ background: '#1890ff' }}
+      />
+      <Card 
+        className="template-node"
+        title={
+          <div className="template-node-header">
+            <Tag color={getMethodColor(template.method_type)}>
+              {template.method_type}
+            </Tag>
+            <Text strong style={{ flex: 1, textAlign: 'center' }}>
+              {template.name}
+            </Text>
+          </div>
+        }
+        size="small"
+      >
+        <div className="template-node-content">
+          {/* Panel Izquierdo - Parámetros */}
+          <div className="parameters-panel">
+            <Text strong>Parámetros</Text>
+            <div className="parameters-list">
+              {template.params?.map((param, index) => (
+                <div 
+                  key={`${param.type}-${param.name}-${index}`} 
+                  className="parameter-item"
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={(e) => onDrop(e, param)}
+                >
+                  <Handle
+                    type="target"
+                    position={Position.Left}
+                    id={`param-${param.type}-${param.name}`}
+                    style={{ visibility: 'visible', position: 'initial' }}
+                    className="connection-handle"
+                  />
+                  <Tag 
+                    style={{ marginLeft: "3px" }}
+                    color={getParamTypeColor(param.type)}>
+                    {param.type === 'query_param' ? 'query' : param.type}
+                  </Tag>
+                  <Text>{param.name}</Text>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Divider type="vertical" className="panel-divider" />
+
+          {/* Panel Derecho - Respuesta */}
+          <div className="response-panel">
+            <Text strong>Respuesta</Text>
+            <div className="response-list">
+              {responseFields.map((field, index) => (
+                <div 
+                  key={`response-${field.name}-${index}`} 
+                  className="response-item"
+                >
+                  <Checkbox />
+                  <Text>{field.name}</Text>
+                  <Tag color={getTypeColor(field.type)}>
+                    {field.type}
+                  </Tag>
+                  <Handle
+                    type="source"
+                    position={Position.Right}
+                    id={`resp-${field.name}`}
+                    style={{ visibility: 'visible', position: 'initial' }}
+                    className="connection-handle"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
-        <Divider type="vertical" className="panel-divider" />
-
-        {/* Panel Derecho - Respuesta */}
-        <div className="response-panel">
-          <Text strong>Respuesta</Text>
-          <div className="response-list">
-            {responseFields.map((field, index) => (
-              <div key={`response-${field.name}-${index}`} className="response-item">
-                <Checkbox />
-                <Text>{field.name}</Text>
-                <Tag color={getTypeColor(field.type)}>
-                  {field.type}
-                </Tag>
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={`resp-${field.name}`}
-                  style={{ visibility: 'visible' }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </>
   );
 };
 
-export default TemplateNode;
+// Memorizamos el componente para mejor performance
+export default memo(TemplateNode);

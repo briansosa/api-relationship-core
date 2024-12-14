@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Layout } from 'antd';
-import { ReactFlow, Background, Controls, useNodesState } from 'reactflow';
+import { ReactFlow, Background, Controls, useNodesState, useEdgesState, addEdge } from 'reactflow';
 import 'reactflow/dist/style.css';
 import TemplateSidebar from '../../components/common/TemplateSidebar';
 import TemplateNode from '../../components/flow/TemplateNode';
@@ -23,6 +23,7 @@ const nodeTypes = {
 
 const FlowView = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [loading, setLoading] = useState(false);
   const [schemas, setSchemas] = useState([]);
 
@@ -74,7 +75,8 @@ const FlowView = () => {
       position: { x: Math.random() * 500, y: Math.random() * 500 },
       data: { 
         template: template,
-        responseSchema: schema?.schema || []
+        responseSchema: schema?.schema || [],
+        onConnect
       },
       draggable: true,
       style: {
@@ -94,6 +96,12 @@ const FlowView = () => {
     ));
   }, [setNodes]);
 
+  // Manejador de conexiones
+  const onConnect = useCallback((params) => {
+    // params contiene sourceHandle, targetHandle, source (nodeId), target (nodeId)
+    setEdges((eds) => addEdge(params, eds));
+  }, [setEdges]);
+
   return (
     <Layout style={{ height: '100vh' }}>
       <TemplateSidebar
@@ -105,17 +113,21 @@ const FlowView = () => {
         <div style={{ width: '100%', height: '100%' }}>
           <ReactFlow 
             nodes={nodes}
+            edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
             onNodesDelete={handleNodesDelete}
+            nodesDraggable={true}
+            panOnDrag={true}
             defaultViewport={viewport}
             minZoom={0.2}
             maxZoom={1.5}
             fitView
             deleteKeyCode={['Backspace', 'Delete']}
-            panOnDrag={true}
             zoomOnScroll={true}
-            panOnScroll={true}
+            panOnScroll={false}
           >
             <Background />
             <Controls />
