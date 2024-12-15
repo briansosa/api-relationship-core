@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Layout, Input, Tree, Typography, Empty, Spin, Button, Select, Space, Tabs, Dropdown, Modal } from 'antd';
+import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Tabs, Dropdown } from 'antd';
 import { SearchOutlined, PlusOutlined, ApiOutlined, ShareAltOutlined, MoreOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+
 const { Sider } = Layout;
 const { Text } = Typography;
 
@@ -17,46 +18,16 @@ const FlowSidebar = ({
   const [searchText, setSearchText] = useState('');
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
-  const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
-  const [flowToRename, setFlowToRename] = useState(null);
-  const [newName, setNewName] = useState('');
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
     onFlowSelect?.(flowId);
   };
 
-  const handleRenameClick = (flow) => {
-    setFlowToRename(flow);
-    setNewName(flow.name);
-    setIsRenameModalVisible(true);
-  };
+  const filteredFlows = flows.filter(flow => 
+    flow.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
-  const handleRenameConfirm = () => {
-    if (flowToRename && newName.trim()) {
-      onRenameFlow(flowToRename.id, newName.trim());
-      setIsRenameModalVisible(false);
-    }
-  };
-
-  const getDropdownItems = (flow) => ({
-    items: [
-      {
-        key: 'rename',
-        icon: <EditOutlined />,
-        label: 'Renombrar',
-        onClick: () => handleRenameClick(flow)
-      },
-      {
-        key: 'delete',
-        icon: <DeleteOutlined />,
-        label: 'Eliminar',
-        onClick: () => onDeleteFlow?.(flow)
-      }
-    ]
-  });
-
-  // Función para construir los datos del Tree
   const buildTreeData = () => {
     return schemas.map(schema => ({
       key: schema.id,
@@ -71,6 +42,23 @@ const FlowSidebar = ({
     }));
   };
 
+  const getDropdownItems = (flow) => ({
+    items: [
+      {
+        key: 'rename',
+        icon: <EditOutlined />,
+        label: 'Renombrar',
+        onClick: () => onRenameFlow(flow.id, flow.name)
+      },
+      {
+        key: 'delete',
+        icon: <DeleteOutlined />,
+        label: 'Eliminar',
+        onClick: () => onDeleteFlow(flow)
+      }
+    ]
+  });
+
   const items = [
     {
       key: 'flows',
@@ -83,21 +71,6 @@ const FlowSidebar = ({
       children: (
         <div style={{ padding: '0 8px' }}>
           <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-            <Select
-              showSearch
-              placeholder="Seleccionar flow"
-              value={selectedFlowId}
-              style={{ width: '100%' }}
-              onChange={handleFlowSelect}
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={flows.map(flow => ({
-                value: flow.id,
-                label: flow.name,
-                title: flow.name
-              }))}
-            />
             <Button 
               type="primary" 
               icon={<PlusOutlined />}
@@ -106,13 +79,19 @@ const FlowSidebar = ({
             >
               Nuevo Flow
             </Button>
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Buscar flow..."
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+            />
           </Space>
           <div style={{ 
             height: 'calc(100vh - 250px)',
             overflow: 'auto',
             padding: '8px 0'
           }}>
-            {flows.map(flow => (
+            {filteredFlows.map(flow => (
               <div
                 key={flow.id}
                 style={{
@@ -128,8 +107,9 @@ const FlowSidebar = ({
                 }}
                 onMouseEnter={() => setHoveredItem(flow.id)}
                 onMouseLeave={() => setHoveredItem(null)}
+                onClick={() => handleFlowSelect(flow.id)}
               >
-                <div onClick={() => handleFlowSelect(flow.id)} style={{ flex: 1 }}>
+                <div style={{ flex: 1 }}>
                   {flow.name}
                 </div>
                 <Dropdown
@@ -198,23 +178,8 @@ const FlowSidebar = ({
   ];
 
   return (
-    <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0', height: '100%' }}>
+    <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
       <Tabs defaultActiveKey="flows" items={items} />
-      
-      <Modal
-        title="Renombrar Flow"
-        open={isRenameModalVisible}
-        onOk={handleRenameConfirm}
-        onCancel={() => setIsRenameModalVisible(false)}
-        destroyOnClose
-      >
-        <Input
-          placeholder="Nuevo nombre"
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          autoFocus
-        />
-      </Modal>
     </Sider>
   );
 };

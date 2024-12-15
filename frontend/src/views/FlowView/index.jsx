@@ -8,7 +8,7 @@ import InputNode from '../../components/flow/InputNode';
 import { useParams } from 'react-router-dom';
 import ShortUniqueId from "short-unique-id";
 import { useNavigate } from 'react-router-dom';
-import FlowHeader from '../../components/flow/FlowHeader';
+import FlowToolbar from '../../components/flow/FlowToolbar';
 
 import { GetAllSchemasWithTemplates } from '../../../wailsjs/go/handlers/OperationSchemaHandler';
 import { GetAllFlows, InsertFlow, GetFlow, DeleteFlow, UpdateFlow } from '../../../wailsjs/go/handlers/FlowHandler';
@@ -16,8 +16,7 @@ import { flow } from '../../../wailsjs/go/models';
 // Definimos nodeTypes fuera del componente
 const NODE_TYPES = {
   template: TemplateNode,
-  input: InputNode,
-  header: FlowHeader
+  input: InputNode
 };
 
 const FlowView = () => {  
@@ -194,20 +193,14 @@ const FlowView = () => {
       });
   };
 
-  const handleRenameFlow = (flowId, newName) => {
-
-    const flowEntity = new flow.Flow({
-      id: flowId,
-      name: newName,
-      max_concurrency: state.entity.max_concurrency,
-      search_type: state.entity.search_type ?? "",
-      relation_fields: flow.RelationField.createFrom(state.entity.relation_fields),
-      relation_operations: flow.Flow.createFrom(state.entity.relation_operations)
-    })
-
-    console.log("handleRenameFlow - updatedFlow", flowEntity);
+  const handleRenameFlow = (flowId, newName) => {    
+    const flow = state.flows.find(t => t.id === flowId);
+    const flowEntity = {
+      ...flow,
+      name: newName
+    }
     
-    UpdateFlow(flowId, flowEntity)
+    UpdateFlow(flowEntity)
       .then(() => {
         // Actualizar la lista de flows
         GetAllOperationsFlow();
@@ -220,8 +213,6 @@ const FlowView = () => {
               name: newName
             }
           }));
-          // También actualizamos el nodo header
-          LoadNodes({ ...state.entity, name: newName });
         }
       })
       .catch((error) => {
@@ -303,22 +294,7 @@ const FlowView = () => {
   function LoadNodes(flow) {
     const nodes = [];
 
-    // Primero agregamos el header
-    if (flow.name) {
-      nodes.push({
-        id: 'flow-header',
-        type: 'header',
-        position: { x: 100, y: 110 },
-        data: { 
-          name: flow.name 
-        },
-        draggable: false,
-        selectable: false,  // Para que no se pueda seleccionar
-        zIndex: 1000       // Para asegurar que esté siempre visible
-      });
-    }
-
-    // Luego agregamos el nodo de inputs si es necesario
+    // Agregamos el nodo de inputs si es necesario
     if (flow.relation_fields.length === 0) {
       nodes.push({
         id: 'inputs',
@@ -345,7 +321,8 @@ const FlowView = () => {
         flows={state.flows}
       />
       <Layout>
-        <div style={{ width: '100%', height: '100%' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <FlowToolbar data={{ name: state.entity.name }} />
           <ReactFlow 
             nodes={nodes}
             edges={edges}

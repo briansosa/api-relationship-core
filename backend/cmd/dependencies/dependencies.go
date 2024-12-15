@@ -60,6 +60,7 @@ func NewByEnvironment() Definition {
 func (d *Definition) Startup(context context.Context) {
 	d.OperationSchemaHandler.Context = &context
 	d.OperationTemplateHandler.Context = &context
+	d.FlowHandler.Context = &context
 }
 
 func (d *Definition) GetBinds() []interface{} {
