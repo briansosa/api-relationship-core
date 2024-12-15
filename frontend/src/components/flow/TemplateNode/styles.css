@@ -12,6 +12,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
 .template-node-content {
@@ -278,4 +279,41 @@ parameter-item,
 
 .schema-header .schema-header-right {
   margin-right: 0px;
+}
+
+.config-button {
+  padding: 4px 8px;
+  height: auto;
+  color: #8c8c8c;
+}
+
+.config-button:hover {
+  color: #1890ff;
+  background: transparent;
+}
+
+/* Estilos para el modal */
+.ant-modal-body .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.ant-modal-body .ant-input-number {
+  width: 100%;
+}
+
+.config-modal {
+  width: 300px !important;
+}
+
+.config-modal .ant-modal-content {
+  width: 300px;
+}
+
+/* Ajustar el contenido del modal para el nuevo ancho */
+.config-modal .ant-modal-body {
+  padding: 12px;  /* Reducir el padding para mejor uso del espacio */
+}
+
+.config-modal .ant-modal-footer {
+  padding: 8px 12px;  /* Reducir el padding del footer */
 }

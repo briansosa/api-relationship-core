@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Handle, Position, NodeResizer } from 'reactflow';
-import { Card, Typography, Tag, Checkbox, Button, Divider } from 'antd';
-import { CaretRightOutlined } from '@ant-design/icons';
+import { Card, Typography, Tag, Checkbox, Button, Divider, Modal, Form, InputNumber, Select } from 'antd';
+import { CaretRightOutlined, SettingOutlined } from '@ant-design/icons';
 import './styles.css';
 
 const { Text } = Typography;
@@ -94,6 +94,21 @@ const SchemaNode = ({ name, value, level = 0 }) => {
 const TemplateNode = ({ data, selected }) => {
   const { template, responseSchema } = data;
   const [schemaData, setSchemaData] = useState(null);
+  const [isConfigModalVisible, setIsConfigModalVisible] = useState(false);
+  const [form] = Form.useForm();
+
+  const EXECUTION_TYPES = {
+    SIMPLE: 'Simple',
+    DIRECT_PRODUCT: 'Direct product',
+    CARDINAL_PRODUCT: 'Cardinal product'
+  };
+
+  const handleConfigSave = () => {
+    form.validateFields().then(values => {
+      // TODO: Guardar configuración
+      setIsConfigModalVisible(false);
+    });
+  };
 
   // Función auxiliar para obtener el color según el método HTTP
   const getMethodColor = (method) => {
@@ -150,6 +165,12 @@ const TemplateNode = ({ data, selected }) => {
             <Text strong style={{ flex: 1, textAlign: 'center' }}>
               {template.name}
             </Text>
+            <Button
+              type="text"
+              icon={<SettingOutlined />}
+              onClick={() => setIsConfigModalVisible(true)}
+              className="config-button"
+            />
           </div>
         }
         size="small"
@@ -196,6 +217,48 @@ const TemplateNode = ({ data, selected }) => {
           </div>
         </div>
       </Card>
+
+      <Modal
+        title="Template Configuration"
+        open={isConfigModalVisible}
+        onOk={handleConfigSave}
+        onCancel={() => setIsConfigModalVisible(false)}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            maxConcurrency: 1,
+            executionType: EXECUTION_TYPES.SIMPLE
+          }}
+        >
+          <Form.Item
+            name="maxConcurrency"
+            label="Maximum Concurrency"
+            rules={[
+              { required: true, message: 'Please input maximum concurrency!' },
+              { type: 'number', min: 1, message: 'Must be at least 1!' }
+            ]}
+          >
+            <InputNumber min={1} style={{ width: '100%' }} />
+          </Form.Item>
+
+          <Form.Item
+            name="executionType"
+            label="List Execution Type"
+            rules={[{ required: true, message: 'Please select execution type!' }]}
+          >
+            <Select>
+              {Object.entries(EXECUTION_TYPES).map(([key, value]) => (
+                <Select.Option key={key} value={key}>
+                  {value}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
