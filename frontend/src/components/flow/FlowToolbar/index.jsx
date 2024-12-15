@@ -4,10 +4,7 @@ import { SaveOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
-const FlowToolbar = ({ data }) => {
-  const handleSave = () => {
-    console.log('Saving flow...');
-  };
+const FlowToolbar = ({ data, onSave }) => {
 
   return (
     <div style={{
@@ -31,7 +28,7 @@ const FlowToolbar = ({ data }) => {
         <Button
           type="primary"
           icon={<SaveOutlined />}
-          onClick={handleSave}
+          onClick={onSave}
         >
           Save Flow
         </Button>

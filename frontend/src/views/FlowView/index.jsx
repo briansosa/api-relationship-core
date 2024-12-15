@@ -101,7 +101,11 @@ const FlowView = () => {
       type: 'template',
       position: { x: Math.random() * 500, y: Math.random() * 500 },
       data: { 
-        template: selectedTemplate,
+        template: {
+          ...selectedTemplate,
+          max_concurrency: selectedTemplate.max_concurrency || 1,
+          search_type: selectedTemplate.search_type || 'simple'
+        },
         responseSchema: selectedSchema?.schema || [],
         onConnect
       },
@@ -218,7 +222,107 @@ const FlowView = () => {
       .catch((error) => {
         console.error('Error renaming flow:', error);
       });
-      
+  };
+
+  // Función auxiliar para procesar un nodo y sus conexiones
+  const processNodeConnections = (nodeId, allNodes, allEdges) => {
+    const node = allNodes.find(n => n.id === nodeId);
+    if (!node) return null;
+
+    // Encontrar todas las conexiones salientes de este nodo
+    const nodeConnections = allEdges.filter(edge => edge.source === nodeId);
+    
+    // Agrupar conexiones por nodo destino
+    const connectionsByTarget = nodeConnections.reduce((acc, connection) => {
+      const targetId = connection.target;
+      if (!acc[targetId]) {
+        acc[targetId] = [];
+      }
+      acc[targetId].push(connection);
+      return acc;
+    }, {});
+
+    // Procesar cada nodo destino y sus conexiones
+    const relationOperations = Object.entries(connectionsByTarget).map(([targetId, connections]) => {
+      const targetNode = allNodes.find(n => n.id === targetId);
+      if (!targetNode) return null;
+
+      // Construir relation_fields para todas las conexiones a este nodo
+      const relationFields = connections.map(connection => {
+        const paramMatch = connection.targetHandle.match(/param-(.*?)-/);
+        const paramType = paramMatch ? paramMatch[1] : '';
+
+        return {
+          type: paramType,
+          parent_field: connection.sourceHandle.replace('resp-', ''),
+          child_parameter: connection.targetHandle.split('-').pop()
+        };
+      });
+
+      return {
+        id: "",
+        operation_schema_id: targetNode.data.template.id,
+        name: targetNode.data.template.name,
+        max_concurrency: targetNode.data.template.max_concurrency || 1,
+        search_type: targetNode.data.template.search_type || "",
+        relation_fields: relationFields,
+        relation_operations: [] // Por ahora lo dejamos vacío
+      };
+    }).filter(Boolean);
+
+    return relationOperations;
+  };
+
+  const handleSaveFlow = () => {
+    // Encontrar el nodo input
+    const inputNode = nodes.find(node => node.type === 'input');
+    if (!inputNode) {
+      console.error('No se encontró el nodo input');
+      return;
+    }
+
+    // Encontrar el primer nodo template conectado al input
+    const inputConnections = edges.filter(edge => edge.source === inputNode.id);
+    if (inputConnections.length === 0) {
+      console.error('El nodo input no tiene conexiones');
+      return;
+    }
+
+    // Obtener el nodo template conectado
+    const firstTemplateNode = nodes.find(node => node.id === inputConnections[0].target);
+    if (!firstTemplateNode) {
+      console.error('No se encontró el nodo template conectado');
+      return;
+    }
+
+    // Construir relation_fields basado en las conexiones del input
+    const relationFields = inputConnections.map(connection => {
+      // Limpiar los identificadores de los campos
+      const parentField = connection.sourceHandle.replace('input-', '');
+      const childParameter = connection.targetHandle.replace('param-query_param-', '').replace('param-body-', '').replace('param-path-', '').replace('param-header-', '');
+
+      return {
+        type: "input",
+        parent_field: parentField,
+        child_parameter: childParameter
+      };
+    });
+
+    // Procesar las conexiones del primer nodo template
+    const relationOperations = processNodeConnections(firstTemplateNode.id, nodes, edges);
+
+    // Construir la entidad a guardar
+    const flowEntity = {
+      id: state.entity.id,
+      operation_schema_id: firstTemplateNode.data.template.id,
+      name: state.entity.name,
+      max_concurrency: firstTemplateNode.data.template.max_concurrency || 1,
+      search_type: firstTemplateNode.data.template.search_type || "",
+      relation_fields: relationFields,
+      relation_operations: relationOperations || []
+    };
+
+    console.log('Entidad a guardar:', flowEntity);
   };
 
   // Functions
@@ -272,19 +376,24 @@ const FlowView = () => {
   }
 
   function GetOperationFlow(id) {
-    GetFlow(id)
-      .then((result) => {
-        console.log("result get operation flow", result);
-
-        LoadNodes(result);
+    // Primero cargar los schemas
+    GetAllSchemasWithTemplates()
+      .then((schemasResult) => {
+        setSchemas(schemasResult);
+        
+        // Luego cargar el flow
+        return GetFlow(id);
+      })
+      .then((flowResult) => {
+        console.log("result get operation flow", flowResult);
+        
+        LoadNodes(flowResult);
         setState(prevState => ({
           ...prevState,
-          entity: result,
+          entity: flowResult,
           disable: false,
           empty: false
         }));
-
-        LoadSchemas();
       })
       .catch((error) => {
         console.error('Error getting operation flow:', error);
@@ -293,19 +402,73 @@ const FlowView = () => {
 
   function LoadNodes(flow) {
     const nodes = [];
+    const newEdges = [];
+    const uid = new ShortUniqueId();
 
-    // Agregamos el nodo de inputs si es necesario
-    if (flow.relation_fields.length === 0) {
-      nodes.push({
-        id: 'inputs',
-        type: 'input',
-        position: { x: 100, y: 100 },
-        data: {},
-        draggable: true
+    // Agregamos el nodo de inputs
+    const inputNode = {
+      id: 'inputs',
+      type: 'input',
+      position: { x: 100, y: 100 },
+      data: {},
+      draggable: true
+    };
+    nodes.push(inputNode);
+
+    // Si hay un operation_schema_id, necesitamos encontrar el template correspondiente
+    if (flow.operation_schema_id) {
+      // Buscar el template en los schemas
+      let selectedTemplate = null;
+      let selectedSchema = null;
+
+      schemas.forEach(schema => {
+        const template = schema.list_templates?.find(t => t.id === flow.operation_schema_id);
+        if (template) {
+          selectedTemplate = template;
+          selectedSchema = schema;
+        }
       });
+
+      if (selectedTemplate) {
+        // Crear el nodo template
+        const templateNode = {
+          id: `template-${uid.rnd()}`,
+          type: 'template',
+          position: { x: 400, y: 100 },
+          data: { 
+            template: {
+              ...selectedTemplate,
+              max_concurrency: selectedTemplate.max_concurrency || flow.max_concurrency || 1,
+              search_type: selectedTemplate.search_type || flow.search_type || 'simple'
+            },
+            responseSchema: selectedSchema?.schema || [],
+            onConnect
+          },
+          draggable: true,
+          style: {
+            width: 400,
+            minWidth: 300,
+            maxWidth: 800
+          }
+        };
+        nodes.push(templateNode);
+
+        // Crear las conexiones basadas en relation_fields
+        flow.relation_fields.forEach(relation => {
+          const edge = {
+            id: `edge-${uid.rnd()}`,
+            source: 'inputs',
+            target: templateNode.id,
+            sourceHandle: relation.parent_field,
+            targetHandle: relation.child_parameter,
+          };
+          newEdges.push(edge);
+        });
+      }
     }
 
     setNodes(nodes);
+    setEdges(newEdges);
   }
 
   return (
@@ -322,7 +485,9 @@ const FlowView = () => {
       />
       <Layout>
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-          <FlowToolbar data={{ name: state.entity.name }} />
+          <FlowToolbar 
+            onSave={handleSaveFlow}
+            data={{ name: state.entity.name }} />
           <ReactFlow 
             nodes={nodes}
             edges={edges}

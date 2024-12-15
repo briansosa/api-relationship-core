@@ -96,6 +96,8 @@ const TemplateNode = ({ data, selected }) => {
   const [schemaData, setSchemaData] = useState(null);
   const [isConfigModalVisible, setIsConfigModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [maxConcurrency, setMaxConcurrency] = useState(template.max_concurrency || 1);
+  const [searchType, setSearchType] = useState(template.search_type || 'simple');
 
   const EXECUTION_TYPES = {
     SIMPLE: 'Simple',
@@ -105,7 +107,17 @@ const TemplateNode = ({ data, selected }) => {
 
   const handleConfigSave = () => {
     form.validateFields().then(values => {
-      // TODO: Guardar configuración
+      // Actualizar los valores en el template
+      const executionTypeToSearchType = {
+        SIMPLE: 'simple',
+        DIRECT_PRODUCT: 'direct_product',
+        CARDINAL_PRODUCT: 'cardinal_product'
+      };
+      
+      // Actualizar max_concurrency y search_type
+      handleMaxConcurrencyChange(values.maxConcurrency);
+      handleSearchTypeChange(executionTypeToSearchType[values.executionType]);
+      
       setIsConfigModalVisible(false);
     });
   };
@@ -145,6 +157,43 @@ const TemplateNode = ({ data, selected }) => {
       }
     }
   }, [responseSchema]);
+
+  // Actualizar los valores en el template cuando cambien
+  const handleMaxConcurrencyChange = (value) => {
+    setMaxConcurrency(value);
+    if (template) {
+      template.max_concurrency = value;
+    }
+  };
+
+  const handleSearchTypeChange = (value) => {
+    setSearchType(value);
+    if (template) {
+      template.search_type = value;
+    }
+  };
+
+  // Cuando se abre el modal, resetear el form con los valores actuales
+  useEffect(() => {
+    if (isConfigModalVisible) {
+      const searchTypeToExecutionType = {
+        'simple': 'SIMPLE',
+        'direct_product': 'DIRECT_PRODUCT',
+        'cardinal_product': 'CARDINAL_PRODUCT'
+      };
+
+      form.setFieldsValue({
+        maxConcurrency: maxConcurrency,
+        executionType: searchTypeToExecutionType[searchType] || 'SIMPLE'
+      });
+    }
+  }, [isConfigModalVisible, form, maxConcurrency, searchType]);
+
+  // Inicializar los estados con los valores del template
+  useEffect(() => {
+    setMaxConcurrency(template.max_concurrency || 1);
+    setSearchType(template.search_type || 'simple');
+  }, [template]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -229,8 +278,8 @@ const TemplateNode = ({ data, selected }) => {
           form={form}
           layout="vertical"
           initialValues={{
-            maxConcurrency: 1,
-            executionType: EXECUTION_TYPES.SIMPLE
+            maxConcurrency: template.max_concurrency || 1,
+            executionType: template.search_type?.toUpperCase() || 'SIMPLE'
           }}
         >
           <Form.Item
