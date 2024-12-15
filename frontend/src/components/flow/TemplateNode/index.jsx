@@ -1,63 +1,99 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Handle, Position, NodeResizer } from 'reactflow';
-import { Card, Divider, Typography, Tag, Checkbox } from 'antd';
+import { Card, Typography, Tag, Checkbox, Button, Divider } from 'antd';
+import { CaretRightOutlined } from '@ant-design/icons';
 import './styles.css';
 
 const { Text } = Typography;
 
-const TemplateNode = ({ data, selected }) => {
-  const { template, responseSchema, onConnect } = data;
-  const [responseFields, setResponseFields] = useState([]);
-
-  // Función recursiva para extraer campos del schema
-  const extractFields = (obj, prefix = '') => {
-    let fields = [];
-    
-    Object.entries(obj).forEach(([key, value]) => {
-      const fullPath = prefix ? `${prefix}.${key}` : key;
-      
-      if (value === null || typeof value !== 'object') {
-        fields.push({
-          name: fullPath,
-          type: value === null ? 'null' : typeof value,
-          value: value
-        });
-      } else if (!Array.isArray(value)) {
-        // Es un objeto, recursivamente extraer sus campos
-        fields = [...fields, ...extractFields(value, fullPath)];
-      }
-    });
-    
-    return fields;
+// Componente para mostrar la estructura jerárquica del schema
+const SchemaNode = ({ name, value, level = 0 }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  
+  const getNodeType = (val) => {
+    if (Array.isArray(val)) return 'array';
+    if (typeof val === 'object' && val !== null) return 'object';
+    return typeof val;
   };
 
-  useEffect(() => {   
-    if (responseSchema) {
-      try {
-        // Si responseSchema ya es un objeto, lo usamos directamente
-        const schemaObj = typeof responseSchema === 'string' ? 
-          JSON.parse(responseSchema) : responseSchema;
-          
-        const fields = extractFields(schemaObj);
-        setResponseFields(fields);
-      } catch (error) {
-        console.error('Error parsing schema:', error);
-        setResponseFields([]);
-      }
-    }
-  }, [responseSchema]);
+  const nodeType = getNodeType(value);
+  const isExpandable = nodeType === 'object' || nodeType === 'array';
+  
+  // Si es un array, tomamos directamente su estructura interna sin el índice
+  const children = nodeType === 'array' ? value[0] : value;
 
-  // Función para obtener el color según el tipo de dato
   const getTypeColor = (type) => {
     const colors = {
       string: 'green',
       number: 'blue',
       boolean: 'orange',
       object: 'purple',
-      null: 'gray'
+      array: 'cyan'
     };
     return colors[type] || 'default';
   };
+
+  return (
+    <div className="schema-node" style={{ marginLeft: level * 8 }}>
+      <div className="schema-header">
+        <div className="schema-header-left">
+          {!isExpandable && <Checkbox />}
+          {isExpandable && (
+            <CaretRightOutlined 
+              className={`caret ${isExpanded ? 'expanded' : ''}`}
+              onClick={() => setIsExpanded(!isExpanded)}
+            />
+          )}
+          <Text>{name}</Text>
+        </div>
+
+        <div className="schema-header-right">
+          <Tag color={getTypeColor(nodeType)}>
+            {nodeType === 'array' ? 'array' : nodeType}
+          </Tag>
+          {!isExpandable && (
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`resp-${name}`}
+              className="connection-handle"
+            />
+          )}
+        </div>
+      </div>
+      
+      {isExpandable && isExpanded && (
+        <div className="schema-children">
+          {/* Si es un array, mostramos directamente los campos del objeto interno */}
+          {nodeType === 'array' ? (
+            Object.entries(children || {}).map(([key, val]) => (
+              <SchemaNode
+                key={key}
+                name={key}
+                value={val}
+                level={level + 1}
+              />
+            ))
+          ) : (
+            Object.entries(children || {}).map(([key, val]) => (
+              <SchemaNode
+                key={key}
+                name={key}
+                value={val}
+                level={level + 1}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Componente TemplateNode principal
+const TemplateNode = ({ data, selected }) => {
+  const { template, responseSchema } = data;
+  const [schemaData, setSchemaData] = useState(null);
 
   // Función auxiliar para obtener el color según el método HTTP
   const getMethodColor = (method) => {
@@ -82,53 +118,25 @@ const TemplateNode = ({ data, selected }) => {
     return colors[type] || 'default';
   };
 
-  // Manejadores de drag and drop
-  const onDragStart = (event, field) => {
-    event.stopPropagation();
-    
-    // Iniciamos la conexión usando el handle directamente
-    const handleElement = document.getElementById(`resp-${field.name}`);
-    if (handleElement) {
-      handleElement.dispatchEvent(new MouseEvent('mousedown', {
-        bubbles: true,
-        cancelable: true,
-        button: 0
-      }));
+  useEffect(() => {   
+    if (responseSchema) {
+      try {
+        const schemaObj = typeof responseSchema === 'string' ? 
+          JSON.parse(responseSchema) : responseSchema;
+        setSchemaData(schemaObj);
+      } catch (error) {
+        console.error('Error parsing schema:', error);
+        setSchemaData(null);
+      }
     }
-  };
-
-  const onDragOver = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.classList.add('can-drop');
-  };
-
-  const onDragLeave = (event) => {
-    event.currentTarget.classList.remove('can-drop');
-  };
-
-  const onDrop = (event, param) => {
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.classList.remove('can-drop');
-    
-    // Simulamos el mouseup en el handle de destino
-    const handleElement = document.getElementById(`param-${param.type}-${param.name}`);
-    if (handleElement) {
-      handleElement.dispatchEvent(new MouseEvent('mouseup', {
-        bubbles: true,
-        cancelable: true,
-        button: 0
-      }));
-    }
-  };
+  }, [responseSchema]);
 
   return (
-    <>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <NodeResizer 
         minWidth={300}
         maxWidth={800}
-        minHeight={200}
+        minHeight={100}
         isVisible={selected}
         handleStyle={{ background: '#1890ff' }}
       />
@@ -155,20 +163,14 @@ const TemplateNode = ({ data, selected }) => {
                 <div 
                   key={`${param.type}-${param.name}-${index}`} 
                   className="parameter-item"
-                  onDragOver={onDragOver}
-                  onDragLeave={onDragLeave}
-                  onDrop={(e) => onDrop(e, param)}
                 >
                   <Handle
                     type="target"
                     position={Position.Left}
                     id={`param-${param.type}-${param.name}`}
-                    style={{ visibility: 'visible', position: 'initial' }}
                     className="connection-handle"
                   />
-                  <Tag 
-                    style={{ marginLeft: "3px" }}
-                    color={getParamTypeColor(param.type)}>
+                  <Tag color={getParamTypeColor(param.type)}>
                     {param.type === 'query_param' ? 'query' : param.type}
                   </Tag>
                   <Text>{param.name}</Text>
@@ -183,32 +185,19 @@ const TemplateNode = ({ data, selected }) => {
           <div className="response-panel">
             <Text strong>Respuesta</Text>
             <div className="response-list">
-              {responseFields.map((field, index) => (
-                <div 
-                  key={`response-${field.name}-${index}`} 
-                  className="response-item"
-                >
-                  <Checkbox />
-                  <Text>{field.name}</Text>
-                  <Tag color={getTypeColor(field.type)}>
-                    {field.type}
-                  </Tag>
-                  <Handle
-                    type="source"
-                    position={Position.Right}
-                    id={`resp-${field.name}`}
-                    style={{ visibility: 'visible', position: 'initial' }}
-                    className="connection-handle"
-                  />
-                </div>
+              {schemaData && Object.entries(schemaData).map(([key, val]) => (
+                <SchemaNode 
+                  key={key}
+                  name={key}
+                  value={val}
+                />
               ))}
             </div>
           </div>
         </div>
       </Card>
-    </>
+    </div>
   );
 };
 
-// Memorizamos el componente para mejor performance
 export default memo(TemplateNode);

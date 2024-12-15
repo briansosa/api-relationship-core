@@ -91,9 +91,8 @@ const OperationSchemaView = () => {
 
   const handleSaveSchema = () => {
     const transformedJson = transformJsonValues(state.entity.response);
-
+    
     // TODO: validate form
-
     const data = new operation.Operation({
       body: state.entity.body,
       headers: state.entity.headers,
@@ -107,7 +106,7 @@ const OperationSchemaView = () => {
       timeout: state.entity.timeout != 0 ? state.entity.timeout : 30,
       url: state.entity.url,
       templates_id: state.entity.templates_id,
-    });
+    });    
 
     UpdateSchema(data);
   };
@@ -151,7 +150,6 @@ const OperationSchemaView = () => {
       body: curlJson.body,
       headers: curlJson.headers,
       query_params: curlJson.query_params,
-      templates_id: state.entity.templates_id,
     });
 
     InsertSchema(data);
@@ -267,14 +265,15 @@ const OperationSchemaView = () => {
       return false;
     }
     if (Array.isArray(json)) {
-      return transformJsonValues(json[0]);
+      return [transformJsonValues(json[0])];
     }
     if (typeof json === "object" && json !== null) {
       return Object.keys(json).reduce((acc, key) => {
         acc[key] = transformJsonValues(json[key]);
         return acc;
       }, {});
-    }
+    }  
+
     return json;
   }
 

@@ -20,9 +20,11 @@ Operation Template -> Estoy en la vista de templates, viendo como se manejan los
 Operation Template -> Save Template
 Operation Template -> Create and Delete Templates
 Operation Template -> Revisar si el backend soporta bodys, creo que no. Si no lo soporta entonces no hacemos los parametros de body ahora
+Diseñar el layout de la vista de flows
+
 
 ##Lo que estoy ahora
-Diseñar el layout de la vista de flows
+Armando la vista de flows, ya cree el nodo input que se va agregando las propiedades que se van a mapear del archivo, tambien cree el nodo de los templates y como se conectan todos estos nodos. El del template tiene la parte de parametros y la parte de propiedades de respuesta con un check para a futuro usarlo para crear los responses fields del usuario
 
 ## Lo que falta
 

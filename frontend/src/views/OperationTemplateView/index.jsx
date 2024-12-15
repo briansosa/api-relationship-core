@@ -159,12 +159,21 @@ function OperationTemplateView() {
   }
 
   function GetAllKeysTemplates(schema) {
+    if (!schema.templates_id || schema.templates_id.length === 0) {
+      setState((prevState) => ({
+        ...prevState,
+        listTemplates: [],
+        schemaId: schema.id,
+      }));
+      return;
+    }
+
     GetAllKeysOperationTemplates(schema.templates_id)
       .then((result) => {
         setState((prevState) => {
           return {
             ...prevState,
-            listTemplates: result,
+            listTemplates: result || [],
             schemaId: schema.id,
           };
         });

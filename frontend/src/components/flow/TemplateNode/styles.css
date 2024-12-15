@@ -1,11 +1,11 @@
 .template-node {
-  height: 100%;
   width: 100%;
   min-width: 300px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   background: white;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .template-node-header {
@@ -16,7 +16,8 @@
 
 .template-node-content {
   display: flex;
-  min-height: 100px;
+  min-height: 50px;
+  overflow: auto;
 }
 
 .parameters-panel,
@@ -24,11 +25,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  margin: 0;
+  overflow: visible;
+  min-width: 0;
+  padding: 8px 4px;
 }
 
 .parameters-list,
@@ -156,12 +155,9 @@ parameter-item,
   cursor: crosshair;
 }
 
-.parameter-item .react-flow__handle {
-  left: -8px;
-}
-
-.response-item .react-flow__handle {
-  right: -8px;
+.parameter-item .connection-handle {
+    position: relative;
+    top: 0;
 }
 
 .connection-handle::before {
@@ -182,4 +178,104 @@ parameter-item,
 .connection-handle:hover {
   opacity: 1;
   transform: scale(1.2) translateX(4px);
+}
+
+.schema-node {
+  position: relative;
+  margin-left: 8px !important;
+}
+
+.schema-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.schema-header:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.caret {
+  font-size: 12px;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.caret.expanded {
+  transform: rotate(90deg);
+}
+
+.schema-children {
+  position: relative;
+  padding-left: 2px;
+}
+
+.schema-children::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #f0f0f0;
+  opacity: 0.5;
+}
+
+/* Ajustes para los handles en el nuevo esquema */
+.schema-header .connection-handle {
+  position: relative;
+  right: 0;
+}
+
+.schema-header .ant-typography {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.schema-header .ant-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  margin-right: 4px;
+}
+
+/* Ajustar el contenedor principal del nodo */
+.react-flow__node {
+  width: 100%;
+}
+
+/* Asegurar que el contenedor del nodo se ajuste correctamente */
+.react-flow__node-template {
+  width: 100%;
+}
+
+.schema-header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.schema-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.schema-header .ant-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  margin: 0;
+  margin-right: 8px;
+}
+
+.schema-header .schema-header-right {
+  margin-right: 0px;
 }
