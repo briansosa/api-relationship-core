@@ -38,7 +38,7 @@ export const AppRoutes = [
     children: [],
   },
   {
-    path: "/flow",
+    path: ["/flow", "/flow/:id/:mode"],
     component: FlowView,
     title: "Flow",
     icon: <NotificationOutlined/>,

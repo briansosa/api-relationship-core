@@ -28,7 +28,7 @@ type Definition struct {
 	FileHandler              *handlers.FileHandler
 	OperationSchemaHandler   *handlers.OperationSchemaHandler
 	OperationTemplateHandler *handlers.OperationTemplateHandler
-
+	FlowHandler              *handlers.FlowHandler
 	//
 	// Services
 	//
@@ -66,6 +66,7 @@ func (d *Definition) GetBinds() []interface{} {
 	return []interface{}{
 		d.OperationSchemaHandler,
 		d.OperationTemplateHandler,
+		d.FlowHandler,
 	}
 }
 
@@ -115,6 +116,7 @@ func initDependencies(environment string) Definition {
 	d.FileHandler = handlers.NewFileHandler(d.FileService)
 	d.OperationSchemaHandler = handlers.NewOperationSchemaHandler(d.PersistenceService, d.HttpClientService)
 	d.OperationTemplateHandler = handlers.NewOperationTemplateHandler(d.PersistenceService, d.HttpClientService)
+	d.FlowHandler = handlers.NewFlowHandler(d.PersistenceService, d.HttpClientService)
 
 	return d
 }

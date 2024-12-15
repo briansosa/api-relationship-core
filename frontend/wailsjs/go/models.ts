@@ -1,3 +1,66 @@
+export namespace flow {
+	
+	export class RelationField {
+	    type: string;
+	    parent_field: string;
+	    child_parameter: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RelationField(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.parent_field = source["parent_field"];
+	        this.child_parameter = source["child_parameter"];
+	    }
+	}
+	export class Flow {
+	    id: string;
+	    operation_schema_id: string;
+	    name: string;
+	    max_concurrency: number;
+	    search_type: string;
+	    relation_fields: RelationField[];
+	    relation_operations: Flow[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Flow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.operation_schema_id = source["operation_schema_id"];
+	        this.name = source["name"];
+	        this.max_concurrency = source["max_concurrency"];
+	        this.search_type = source["search_type"];
+	        this.relation_fields = this.convertValues(source["relation_fields"], RelationField);
+	        this.relation_operations = this.convertValues(source["relation_operations"], Flow);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace operation {
 	
 	export class Operation {
