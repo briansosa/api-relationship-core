@@ -7,7 +7,7 @@ import './styles.css';
 const { Text } = Typography;
 
 // Componente para mostrar la estructura jerárquica del schema
-const SchemaNode = ({ name, value, level = 0 }) => {
+const SchemaNode = ({ name, value, level = 0, fullPath = '' }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
   const getNodeType = (val) => {
@@ -15,12 +15,6 @@ const SchemaNode = ({ name, value, level = 0 }) => {
     if (typeof val === 'object' && val !== null) return 'object';
     return typeof val;
   };
-
-  const nodeType = getNodeType(value);
-  const isExpandable = nodeType === 'object' || nodeType === 'array';
-  
-  // Si es un array, tomamos directamente su estructura interna sin el índice
-  const children = nodeType === 'array' ? value[0] : value;
 
   const getTypeColor = (type) => {
     const colors = {
@@ -32,6 +26,26 @@ const SchemaNode = ({ name, value, level = 0 }) => {
     };
     return colors[type] || 'default';
   };
+
+  const nodeType = getNodeType(value);
+  const isExpandable = nodeType === 'object' || nodeType === 'array';
+  const children = nodeType === 'array' ? value[0] : value;
+
+  // Construir el path completo para este nodo
+  const currentPath = fullPath ? `${fullPath}.${name}` : name;
+  
+  // Modificar cómo construimos el handleId
+  let handleId;
+  if (nodeType === 'array') {
+    // Para arrays, no agregamos el nombre del array al path del handle
+    handleId = fullPath;
+  } else if (fullPath.includes('#')) {
+    // Si ya estamos dentro de un array (el path contiene #)
+    handleId = currentPath;
+  } else {
+    // Caso normal
+    handleId = currentPath;
+  }
 
   return (
     <div className="schema-node" style={{ marginLeft: level * 8 }}>
@@ -55,7 +69,7 @@ const SchemaNode = ({ name, value, level = 0 }) => {
             <Handle
               type="source"
               position={Position.Right}
-              id={`resp-${name}`}
+              id={`resp-${handleId}`}
               className="connection-handle"
             />
           )}
@@ -64,26 +78,15 @@ const SchemaNode = ({ name, value, level = 0 }) => {
       
       {isExpandable && isExpanded && (
         <div className="schema-children">
-          {/* Si es un array, mostramos directamente los campos del objeto interno */}
-          {nodeType === 'array' ? (
-            Object.entries(children || {}).map(([key, val]) => (
-              <SchemaNode
-                key={key}
-                name={key}
-                value={val}
-                level={level + 1}
-              />
-            ))
-          ) : (
-            Object.entries(children || {}).map(([key, val]) => (
-              <SchemaNode
-                key={key}
-                name={key}
-                value={val}
-                level={level + 1}
-              />
-            ))
-          )}
+          {Object.entries(children || {}).map(([key, val]) => (
+            <SchemaNode
+              key={key}
+              name={key}
+              value={val}
+              level={level + 1}
+              fullPath={nodeType === 'array' ? `${currentPath}.#` : currentPath}
+            />
+          ))}
         </div>
       )}
     </div>

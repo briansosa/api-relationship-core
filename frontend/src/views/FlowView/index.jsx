@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Layout } from 'antd';
 import { ReactFlow, Background, Controls, useNodesState, useEdgesState, addEdge } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -49,6 +49,10 @@ const FlowView = () => {
     disable: true
   });
 
+  const edgesRef = useRef([]);
+
+  // Agregar un nuevo estado para el loading del grafo
+  const [graphLoading, setGraphLoading] = useState(false);
 
   useEffect(() => {
     console.log("urlParams changed:", urlParams);
@@ -70,6 +74,13 @@ const FlowView = () => {
       GetOperationFlow(urlParams.id);
     }
   }, [urlParams]);
+
+  useEffect(() => {
+    if (nodes.length > 0 && edgesRef.current.length > 0) {
+      setEdges(edgesRef.current);
+      edgesRef.current = [];
+    }
+  }, [nodes]);
 
   const handleTemplateSelect = (templateId) => {
     // templateId viene como un array con un único elemento
@@ -144,7 +155,7 @@ const FlowView = () => {
   }, [setNodes]);
 
   const handleAddFlow = () => {
-    console.log("add flow");
+    console.log("Iniciando creación de nuevo flow");
     const randomId = new ShortUniqueId().rnd();
     const entity = {
       id: randomId,
@@ -156,7 +167,7 @@ const FlowView = () => {
     }
 
     InsertOperationFlow(entity);
-  }
+  };
 
   // Manejador de conexiones
   const onConnect = useCallback((params) => {
@@ -204,24 +215,7 @@ const FlowView = () => {
       name: newName
     }
     
-    UpdateFlow(flowEntity)
-      .then(() => {
-        // Actualizar la lista de flows
-        GetAllOperationsFlow();
-        // Si el flow renombrado es el seleccionado, actualizar el estado
-        if (state.id === flowId) {
-          setState(prevState => ({
-            ...prevState,
-            entity: {
-              ...prevState.entity,
-              name: newName
-            }
-          }));
-        }
-      })
-      .catch((error) => {
-        console.error('Error renaming flow:', error);
-      });
+
   };
 
   // Función auxiliar para procesar un nodo y sus conexiones
@@ -252,12 +246,22 @@ const FlowView = () => {
         const paramMatch = connection.targetHandle.match(/param-(.*?)-/);
         const paramType = paramMatch ? paramMatch[1] : '';
 
+        // Construir el parent_field con el formato: [Nombre del template]@[json path]
+        const sourceField = connection.sourceHandle.replace('resp-', '');
+        const parentField = `${node.data.template.name}@${buildJsonPath(sourceField, node.data.responseSchema)}`;
+
+        // Extraer solo el último segmento del targetHandle
+        const childParameter = connection.targetHandle.split('-').pop();
+
         return {
           type: paramType,
-          parent_field: connection.sourceHandle.replace('resp-', ''),
-          child_parameter: connection.targetHandle.split('-').pop()
+          parent_field: parentField,
+          child_parameter: childParameter
         };
       });
+
+      // Procesar recursivamente las conexiones del nodo destino
+      const nestedOperations = processNodeConnections(targetId, allNodes, allEdges);
 
       return {
         id: "",
@@ -266,11 +270,45 @@ const FlowView = () => {
         max_concurrency: targetNode.data.template.max_concurrency || 1,
         search_type: targetNode.data.template.search_type || "",
         relation_fields: relationFields,
-        relation_operations: [] // Por ahora lo dejamos vacío
+        relation_operations: nestedOperations || [] // Incluir las operaciones anidadas
       };
     }).filter(Boolean);
 
     return relationOperations;
+  };
+
+  // Función auxiliar para construir el JSON path
+  const buildJsonPath = (field, schema) => {
+    if (!schema) return field;
+
+    // Función recursiva para encontrar la ruta completa
+    const findPath = (currentSchema, targetField, currentPath = '') => {
+      if (!currentSchema || typeof currentSchema !== 'object') return null;
+
+      // Buscar en las propiedades del objeto
+      for (const [key, value] of Object.entries(currentSchema)) {
+        // Si encontramos el campo objetivo
+        if (key === targetField) {
+          return currentPath ? `${currentPath}.${key}` : key;
+        }
+
+        // Si es un array, incluimos el nombre de la propiedad y el #
+        if (Array.isArray(value)) {
+          const result = findPath(value[0], targetField, currentPath ? `${currentPath}.${key}.#` : `${key}.#`);
+          if (result) return result;
+        }
+        // Si es un objeto, seguimos buscando
+        else if (typeof value === 'object') {
+          const result = findPath(value, targetField, currentPath ? `${currentPath}.${key}` : key);
+          if (result) return result;
+        }
+      }
+
+      return null;
+    };
+
+    const path = findPath(schema, field);
+    return path || field;
   };
 
   const handleSaveFlow = () => {
@@ -297,9 +335,10 @@ const FlowView = () => {
 
     // Construir relation_fields basado en las conexiones del input
     const relationFields = inputConnections.map(connection => {
-      // Limpiar los identificadores de los campos
       const parentField = connection.sourceHandle.replace('input-', '');
-      const childParameter = connection.targetHandle.replace('param-query_param-', '').replace('param-body-', '').replace('param-path-', '').replace('param-header-', '');
+      
+      // Extraer solo el último segmento del targetHandle
+      const childParameter = connection.targetHandle.split('-').pop();
 
       return {
         type: "input",
@@ -323,24 +362,10 @@ const FlowView = () => {
     };
 
     console.log('Entidad a guardar:', flowEntity);
+    UpdateOperationFlow(flowEntity);
   };
 
   // Functions
-
-  function LoadSchemas() {
-    setLoading(true);
-    GetAllSchemasWithTemplates()
-      .then((result) => {
-        console.log("result schemas with templates", result);
-        setSchemas(result);
-      })
-      .catch((error) => {
-        console.error('Error loading schemas:', error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
 
   function GetAllOperationsFlow() {
     GetAllFlows()
@@ -357,8 +382,18 @@ const FlowView = () => {
   }
 
   function InsertOperationFlow(flow) {
+    console.log("InsertOperationFlow - iniciando inserción:", {
+      flow,
+      currentNodes: nodes.length
+    });
+    
     InsertFlow(flow)
       .then((result) => {
+        console.log("InsertOperationFlow - flow insertado:", {
+          result,
+          currentNodes: nodes.length
+        });
+        
         setState(prevState => ({
           ...prevState,
           entity: {
@@ -367,7 +402,26 @@ const FlowView = () => {
           }
         }));
 
+        // Inicializar el canvas con un nodo input
+        const inputNode = {
+          id: 'inputs',
+          type: 'input',
+          position: { x: 100, y: 100 },
+          data: {
+            fields: []
+          },
+          draggable: true
+        };
+
+        console.log("InsertOperationFlow - antes de setNodes:", {
+          inputNode,
+          currentNodes: nodes.length
+        });
+        setNodes([inputNode]);
+        setEdges([]);
+
         const url = `/flow/${result.id}/edit`;
+        console.log("InsertOperationFlow - redirigiendo a:", url);
         navigate(url);
       })
       .catch((error) => {
@@ -382,93 +436,169 @@ const FlowView = () => {
         setSchemas(schemasResult);
         
         // Luego cargar el flow
-        return GetFlow(id);
-      })
-      .then((flowResult) => {
-        console.log("result get operation flow", flowResult);
-        
-        LoadNodes(flowResult);
-        setState(prevState => ({
-          ...prevState,
-          entity: flowResult,
-          disable: false,
-          empty: false
-        }));
+        return GetFlow(id).then(flowResult => {          
+          // Pasar los schemas directamente a LoadNodes
+          LoadNodes(flowResult, schemasResult);
+          setState(prevState => ({
+            ...prevState,
+            entity: flowResult,
+            disable: false,
+            empty: false
+          }));
+        });
       })
       .catch((error) => {
-        console.error('Error getting operation flow:', error);
+        console.error('Error en GetOperationFlow:', error);
+      });
+  }
+  
+  function UpdateOperationFlow(flow) {
+    UpdateFlow(flow)
+      .then(() => {
+        setState(prevState => ({
+          ...prevState,
+          entity: flow
+        }));
+
+        const url = `/flow/${flow.id}/edit`;
+        navigate(url);
+      })
+      .catch((error) => {
+        console.error('Error updating operation flow:', error);
       });
   }
 
-  function LoadNodes(flow) {
+  function LoadNodes(flow, availableSchemas) {
+    setGraphLoading(true);
     const nodes = [];
     const newEdges = [];
     const uid = new ShortUniqueId();
 
-    // Agregamos el nodo de inputs
+    // Constantes para el espaciado
+    const HORIZONTAL_SPACING = 600; // Espacio horizontal entre nodos
+    const VERTICAL_SPACING = 250;   // Espacio vertical entre nodos del mismo nivel
+    const INITIAL_X = 100;          // Posición X inicial
+    const INITIAL_Y = 100;          // Posición Y inicial
+
+    // Agregar el nodo input con sus propiedades
     const inputNode = {
       id: 'inputs',
       type: 'input',
-      position: { x: 100, y: 100 },
-      data: {},
+      position: { x: INITIAL_X, y: INITIAL_Y },
+      data: {
+        fields: flow.relation_fields.map(relation => ({
+          name: relation.parent_field,
+          type: 'string'
+        }))
+      },
       draggable: true
     };
     nodes.push(inputNode);
 
-    // Si hay un operation_schema_id, necesitamos encontrar el template correspondiente
-    if (flow.operation_schema_id) {
-      // Buscar el template en los schemas
+    const loadTemplateAndOperations = (templateId, level = 0, index = 0, relationFields = [], relationOperations = []) => {
+      // Usar los schemas pasados como parámetro en lugar del estado
       let selectedTemplate = null;
       let selectedSchema = null;
 
-      schemas.forEach(schema => {
-        const template = schema.list_templates?.find(t => t.id === flow.operation_schema_id);
+      availableSchemas.forEach(schema => {
+        const template = schema.list_templates?.find(t => t.id === templateId);
         if (template) {
           selectedTemplate = template;
           selectedSchema = schema;
         }
       });
 
-      if (selectedTemplate) {
-        // Crear el nodo template
-        const templateNode = {
-          id: `template-${uid.rnd()}`,
-          type: 'template',
-          position: { x: 400, y: 100 },
-          data: { 
-            template: {
-              ...selectedTemplate,
-              max_concurrency: selectedTemplate.max_concurrency || flow.max_concurrency || 1,
-              search_type: selectedTemplate.search_type || flow.search_type || 'simple'
-            },
-            responseSchema: selectedSchema?.schema || [],
-            onConnect
-          },
-          draggable: true,
-          style: {
-            width: 400,
-            minWidth: 300,
-            maxWidth: 800
-          }
-        };
-        nodes.push(templateNode);
+      if (!selectedTemplate) {
+        console.warn('No se encontró el template:', templateId);
+        return null;
+      }
 
-        // Crear las conexiones basadas en relation_fields
-        flow.relation_fields.forEach(relation => {
-          const edge = {
-            id: `edge-${uid.rnd()}`,
-            source: 'inputs',
-            target: templateNode.id,
-            sourceHandle: relation.parent_field,
-            targetHandle: relation.child_parameter,
-          };
-          newEdges.push(edge);
+      // Calcular la posición basada en el nivel y el índice
+      const position = {
+        x: INITIAL_X + (level + 1) * HORIZONTAL_SPACING,
+        y: INITIAL_Y + index * VERTICAL_SPACING
+      };
+
+      // Crear el nodo template con la nueva posición
+      const templateNode = {
+        id: `template-${uid.rnd()}`,
+        type: 'template',
+        position,
+        data: { 
+          template: {
+            ...selectedTemplate,
+            max_concurrency: selectedTemplate.max_concurrency || 1,
+            search_type: selectedTemplate.search_type || 'simple'
+          },
+          responseSchema: selectedSchema?.schema || [],
+          onConnect
+        },
+        draggable: true,
+        style: {
+          width: 400,
+          minWidth: 300,
+          maxWidth: 800
+        }
+      };
+      nodes.push(templateNode);
+
+      // Crear las conexiones basadas en relation_fields
+      relationFields.forEach(relation => {
+        const sourceId = relation.type === 'input' ? 'inputs' : nodes[nodes.length - 2].id;
+        
+        // Construir los IDs de los handles
+        let sourceHandle, targetHandle;
+        
+        if (relation.type === 'input') {
+          sourceHandle = `input-${relation.parent_field}`;
+          targetHandle = `param-${relation.type}-${relation.child_parameter}`;
+        } else {
+          // Para conexiones entre templates, extraer el último campo del path
+          const fieldPath = relation.parent_field.split('@')[1];
+          sourceHandle = `resp-${fieldPath}`;
+          targetHandle = `param-${relation.type}-${relation.child_parameter}`;
+        }
+
+        const edge = {
+          id: `edge-${uid.rnd()}`,
+          source: sourceId,
+          target: templateNode.id,
+          sourceHandle,
+          targetHandle,
+        };
+        
+        newEdges.push(edge);
+      });
+
+      // Procesar recursivamente las operaciones relacionadas
+      if (relationOperations && relationOperations.length > 0) {
+        relationOperations.forEach((operation, childIndex) => {
+          loadTemplateAndOperations(
+            operation.operation_schema_id,
+            level + 1,
+            childIndex,
+            operation.relation_fields,
+            operation.relation_operations
+          );
         });
       }
+
+      return templateNode;
+    };
+
+    // Si hay un operation_schema_id, cargar el primer template y sus operaciones
+    if (flow.operation_schema_id) {
+      loadTemplateAndOperations(
+        flow.operation_schema_id,
+        0,
+        0,
+        flow.relation_fields,
+        flow.relation_operations
+      );
     }
 
     setNodes(nodes);
-    setEdges(newEdges);
+    edgesRef.current = newEdges;
   }
 
   return (
@@ -487,7 +617,8 @@ const FlowView = () => {
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <FlowToolbar 
             onSave={handleSaveFlow}
-            data={{ name: state.entity.name }} />
+            data={{ name: state.entity.name }} 
+          />
           <ReactFlow 
             nodes={nodes}
             edges={edges}
