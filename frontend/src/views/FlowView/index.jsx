@@ -488,7 +488,7 @@ const FlowView = () => {
     const uid = new ShortUniqueId();
 
     // Constantes para el espaciado
-    const HORIZONTAL_SPACING = 600; // Espacio horizontal entre nodos
+    const HORIZONTAL_SPACING = 550; // Espacio horizontal entre nodos
     const VERTICAL_SPACING = 250;   // Espacio vertical entre nodos del mismo nivel
     const INITIAL_X = 100;          // Posición X inicial
     const INITIAL_Y = 100;          // Posición Y inicial
@@ -497,7 +497,7 @@ const FlowView = () => {
     const inputNode = {
       id: 'inputs',
       type: 'input',
-      position: { x: INITIAL_X, y: INITIAL_Y },
+      position: { x: INITIAL_X + 200, y: INITIAL_Y },
       data: {
         fields: flow.relation_fields.map(relation => ({
           name: relation.parent_field,
