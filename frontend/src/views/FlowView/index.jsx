@@ -24,7 +24,30 @@ const FlowView = () => {
   const navigate = useNavigate();
   
   // Memoizamos nodeTypes si necesitamos acceder a props o estado
-  const nodeTypes = useMemo(() => NODE_TYPES, []);
+  const nodeTypes = useMemo(() => ({
+    template: TemplateNode,
+    input: (props) => (
+      <InputNode
+        {...props}
+        updateNodeData={(newData) => {
+          setNodes((nds) =>
+            nds.map((node) => {
+              if (node.id === props.id) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    ...newData,
+                  },
+                };
+              }
+              return node;
+            })
+          );
+        }}
+      />
+    ),
+  }), []);
 
   const entityInit = {
     id: "0",
@@ -490,6 +513,11 @@ const FlowView = () => {
           name: relation.parent_field,
           type: 'string'
         }))
+      },
+      style: {
+        width: 200,
+        minWidth: 100,
+        maxWidth: 800
       },
       draggable: true
     };

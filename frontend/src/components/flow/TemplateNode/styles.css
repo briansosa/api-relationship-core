@@ -99,8 +99,11 @@ parameter-item,
 
 /* Mejorar visibilidad de los handles */
 .react-flow__handle {
-  width: 16px;
-  height: 16px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
   background-color: #1890ff;
   border: 2px solid white;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
@@ -154,11 +157,13 @@ parameter-item,
 .connection-handle:hover {
   background-color: #40a9ff;
   cursor: crosshair;
+  opacity: 1;
+  transform: scale(1.2) translateY(-4px);
 }
 
 .parameter-item .connection-handle {
     position: relative;
-    top: 0;
+    top: 8px;
 }
 
 .connection-handle::before {
@@ -174,11 +179,6 @@ parameter-item,
 .connection-handle {
   opacity: 0.8;
   transition: opacity 0.2s, transform 0.2s;
-}
-
-.connection-handle:hover {
-  opacity: 1;
-  transform: scale(1.2) translateX(4px);
 }
 
 .schema-node {
@@ -229,6 +229,7 @@ parameter-item,
 .schema-header .connection-handle {
   position: relative;
   right: 0;
+  top: 8px
 }
 
 .schema-header .ant-typography {
