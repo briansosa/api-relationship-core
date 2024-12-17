@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Tabs, Dropdown } from 'antd';
+import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Tabs, Dropdown, Modal } from 'antd';
 import { SearchOutlined, PlusOutlined, ApiOutlined, ShareAltOutlined, MoreOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -18,6 +18,8 @@ const FlowSidebar = ({
   const [searchText, setSearchText] = useState('');
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [newFlowName, setNewFlowName] = useState('');
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
@@ -48,7 +50,10 @@ const FlowSidebar = ({
         key: 'rename',
         icon: <EditOutlined />,
         label: 'Renombrar',
-        onClick: () => onRenameFlow(flow.id, flow.name)
+        onClick: () => {
+          setNewFlowName(flow.name); // Prellenar el nombre actual
+          setIsModalVisible(true);
+        }
       },
       {
         key: 'delete',
@@ -58,6 +63,17 @@ const FlowSidebar = ({
       }
     ]
   });
+
+  const handleOk = () => {
+    if (newFlowName.trim() !== '') {
+      onRenameFlow(selectedFlowId, newFlowName); // Llama a la función para renombrar
+    }
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
 
   const items = [
     {
@@ -180,6 +196,18 @@ const FlowSidebar = ({
   return (
     <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
       <Tabs defaultActiveKey="flows" items={items} />
+      <Modal
+        title="Renombrar Flujo"
+        visible={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      >
+        <Input
+          value={newFlowName}
+          onChange={(e) => setNewFlowName(e.target.value)}
+          placeholder="Nuevo nombre del flujo"
+        />
+      </Modal>
     </Sider>
   );
 };

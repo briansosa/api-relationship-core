@@ -164,6 +164,7 @@ parameter-item,
 .parameter-item .connection-handle {
     position: relative;
     top: 8px;
+    margin-left: 3%;
 }
 
 .connection-handle::before {

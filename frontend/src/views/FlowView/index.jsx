@@ -63,7 +63,6 @@ const FlowView = () => {
   // Hooks
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [loading, setLoading] = useState(false);
   const [schemas, setSchemas] = useState([]);
   const [state, setState] = useState({
     entity: entityInit,
@@ -74,19 +73,13 @@ const FlowView = () => {
 
   const edgesRef = useRef([]);
 
-  // Agregar un nuevo estado para el loading del grafo
-  const [graphLoading, setGraphLoading] = useState(false);
 
-  useEffect(() => {
-    console.log("urlParams changed:", urlParams);
-    
+  useEffect(() => {    
     if (!urlParams.id && !urlParams.mode) {
-      console.log("no id or mode, getting all flows");
       GetAllOperationsFlow();
     }
 
     if (urlParams.id !== "0" && urlParams.mode === "edit") {
-      console.log("id and mode, getting flow:", urlParams.id);
       setState((prevState) => ({
         ...prevState,
         id: urlParams.id,
@@ -237,8 +230,8 @@ const FlowView = () => {
       ...flow,
       name: newName
     }
-    
 
+    UpdateOperationFlow(flowEntity);
   };
 
   // Función auxiliar para procesar un nodo y sus conexiones
@@ -453,22 +446,20 @@ const FlowView = () => {
   }
 
   function GetOperationFlow(id) {
-    // Primero cargar los schemas
-    GetAllSchemasWithTemplates()
-      .then((schemasResult) => {
-        setSchemas(schemasResult);
-        
-        // Luego cargar el flow
-        return GetFlow(id).then(flowResult => {          
-          // Pasar los schemas directamente a LoadNodes
+    GetFlow(id)
+      .then(flowResult => {
+        setState(prevState => ({
+          ...prevState,
+          entity: flowResult,
+          disable: false,
+          empty: false
+        }));
+
+        GetAllSchemasWithTemplates().then((schemasResult) => {
+          setSchemas(schemasResult);
           LoadNodes(flowResult, schemasResult);
-          setState(prevState => ({
-            ...prevState,
-            entity: flowResult,
-            disable: false,
-            empty: false
-          }));
         });
+        GetAllOperationsFlow();
       })
       .catch((error) => {
         console.error('Error en GetOperationFlow:', error);
@@ -492,7 +483,6 @@ const FlowView = () => {
   }
 
   function LoadNodes(flow, availableSchemas) {
-    setGraphLoading(true);
     const nodes = [];
     const newEdges = [];
     const uid = new ShortUniqueId();
@@ -632,7 +622,6 @@ const FlowView = () => {
   return (
     <Layout style={{ height: '100vh' }}>
       <FlowSidebar
-        loading={loading}
         schemas={schemas}
         onAddFlow={handleAddFlow}
         onTemplateSelect={handleTemplateSelect}
