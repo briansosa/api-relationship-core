@@ -509,7 +509,9 @@ const FlowView = () => {
         minWidth: 100,
         maxWidth: 800
       },
-      draggable: true
+      draggable: true,
+      deletable: false
+
     };
     nodes.push(inputNode);
 
