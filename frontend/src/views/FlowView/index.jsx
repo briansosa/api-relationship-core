@@ -19,35 +19,42 @@ const NODE_TYPES = {
   input: InputNode
 };
 
+
+// Datos hardcodeados para FieldsResponse
+const MOCK_FIELDS_RESPONSE = [
+  {
+    id: "1",
+    name: "Ubicación completa",
+    fields_response: [
+      {
+        operation_name: "locacion",
+        field_response: "ubicacion.departamento.nombre"
+      },
+      {
+        operation_name: "ubicacion",
+        field_response: "direccionesNormalizadas.#.coordenadas.x"
+      }
+    ]
+  },
+  {
+    id: "2",
+    name: "Datos básicos",
+    fields_response: [
+      {
+        operation_name: "locacion",
+        field_response: "ubicacion.provincia.nombre"
+      },
+      {
+        operation_name: "ubicacion",
+        field_response: "direccionesNormalizadas.#.nombre_localidad"
+      }
+    ]
+  }
+];
+
 const FlowView = () => {  
   const urlParams = useParams();
   const navigate = useNavigate();
-  
-  // Memoizamos nodeTypes si necesitamos acceder a props o estado
-  const nodeTypes = useMemo(() => ({
-    template: TemplateNode,
-    input: (props) => (
-      <InputNode
-        {...props}
-        updateNodeData={(newData) => {
-          setNodes((nds) =>
-            nds.map((node) => {
-              if (node.id === props.id) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    ...newData,
-                  },
-                };
-              }
-              return node;
-            })
-          );
-        }}
-      />
-    ),
-  }), []);
 
   const entityInit = {
     id: "0",
@@ -58,7 +65,12 @@ const FlowView = () => {
     relation_fields: [],
     relation_operations: []
   };
-
+  // Nuevo estado para Fields Response
+  const [fieldsResponses, setFieldsResponses] = useState(MOCK_FIELDS_RESPONSE);
+  const [selectedFieldResponse, setSelectedFieldResponse] = useState(null);
+  const [fieldsResponseCounter, setFieldsResponseCounter] = useState(1);
+  
+ 
 
   // Hooks
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -97,6 +109,87 @@ const FlowView = () => {
       edgesRef.current = [];
     }
   }, [nodes]);
+
+   // Manejador para cuando se selecciona un checkbox en TemplateNode
+   const handleFieldSelect = useCallback((templateName, fieldPath, isChecked) => {
+    console.log("handleFieldSelect called with:", { templateName, fieldPath, isChecked, selectedFieldResponse });
+
+    if (!selectedFieldResponse) return;
+
+    setFieldsResponses(prev => {
+      const updatedResponses = prev.map(fr => {
+        if (fr.id === selectedFieldResponse) {
+          const newFields = isChecked 
+            ? [...fr.fields_response, {
+                operation_name: templateName,
+                field_response: fieldPath
+              }]
+            : fr.fields_response.filter(f => 
+                !(f.operation_name === templateName && f.field_response === fieldPath)
+              );
+          
+          console.log("Updated fields for response:", { newFields });
+          return {
+            ...fr,
+            fields_response: newFields
+          };
+        }
+        return fr;
+      });
+      console.log("Updated fieldsResponses:", updatedResponses);
+      return updatedResponses;
+    });
+  }, [selectedFieldResponse]);
+
+  // Función para verificar si un campo está seleccionado
+  const isFieldSelected = useCallback((templateName, fieldPath) => {
+    console.log("isFieldSelected called with:", { templateName, fieldPath, selectedFieldResponse });
+
+    if (!selectedFieldResponse) return false;
+
+    const currentFR = fieldsResponses.find(fr => fr.id === selectedFieldResponse);
+    const isSelected = currentFR?.fields_response.some(f => 
+      f.operation_name === templateName && f.field_response === fieldPath
+    );
+
+    console.log("Field selected status:", isSelected);
+    return isSelected;
+  }, [selectedFieldResponse, fieldsResponses]);
+
+  // Memoizamos nodeTypes después de definir las funciones necesarias
+  const nodeTypes = useMemo(() => ({
+    template: props => (
+      <TemplateNode
+        {...props}
+        onFieldSelect={handleFieldSelect}
+        isFieldSelected={isFieldSelected}
+      />
+    ),
+    input: (props) => (
+      <InputNode
+        {...props}
+        updateNodeData={(newData) => {
+          setNodes((nds) =>
+            nds.map((node) => {
+              if (node.id === props.id) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    ...newData,
+                  },
+                };
+              }
+              return node;
+            })
+          );
+        }}
+      />
+    ),
+  }), [handleFieldSelect, isFieldSelected, setNodes]);
+
+
+
 
   const handleTemplateSelect = (templateId) => {
     // templateId viene como un array con un único elemento
@@ -621,6 +714,14 @@ const FlowView = () => {
     edgesRef.current = newEdges;
   }
 
+  // Al renderizar el componente
+  console.log("FlowView rendered with states:", {
+    fieldsResponses,
+    selectedFieldResponse,
+    nodes,
+    edges
+  });
+
   return (
     <Layout style={{ height: '100vh' }}>
       <FlowSidebar
@@ -631,6 +732,12 @@ const FlowView = () => {
         onDeleteFlow={handleDeleteFlow}
         onRenameFlow={handleRenameFlow}
         flows={state.flows}
+        fieldsResponses={fieldsResponses}
+        selectedFieldResponse={selectedFieldResponse}
+        setSelectedFieldResponse={setSelectedFieldResponse}
+        setFieldsResponses={setFieldsResponses}
+        fieldsResponseCounter={fieldsResponseCounter}
+        setFieldsResponseCounter={setFieldsResponseCounter}
       />
       <Layout>
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>

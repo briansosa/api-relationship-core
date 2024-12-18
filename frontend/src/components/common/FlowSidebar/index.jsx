@@ -5,38 +5,6 @@ import { SearchOutlined, PlusOutlined, ApiOutlined, ShareAltOutlined, MoreOutlin
 const { Sider } = Layout;
 const { Text } = Typography;
 
-// Datos hardcodeados para FieldsResponse
-const MOCK_FIELDS_RESPONSE = [
-  {
-    id: "1",
-    name: "Ubicación completa",
-    fields_response: [
-      {
-        operation_name: "get-georeference",
-        field_response: "ubicacion.departamento.nombre"
-      },
-      {
-        operation_name: "location",
-        field_response: "direccionesNormalizadas.#.coordenadas.x"
-      }
-    ]
-  },
-  {
-    id: "2",
-    name: "Datos básicos",
-    fields_response: [
-      {
-        operation_name: "get-georeference",
-        field_response: "ubicacion.provincia.nombre"
-      },
-      {
-        operation_name: "location",
-        field_response: "direccionesNormalizadas.#.nombre_localidad"
-      }
-    ]
-  }
-];
-
 const FlowSidebar = ({ 
   loading = false,
   schemas = [],
@@ -45,18 +13,21 @@ const FlowSidebar = ({
   onAddFlow,
   onFlowSelect,
   onDeleteFlow,
-  onRenameFlow
+  onRenameFlow,
+  fieldsResponses,
+  selectedFieldResponse,
+  setSelectedFieldResponse,
+  setFieldsResponses,
+  fieldsResponseCounter,
+  setFieldsResponseCounter
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newFlowName, setNewFlowName] = useState('');
-  const [fieldsResponses, setFieldsResponses] = useState(MOCK_FIELDS_RESPONSE);
-  const [selectedFieldResponse, setSelectedFieldResponse] = useState(null);
   const [isFieldResponseModalVisible, setIsFieldResponseModalVisible] = useState(false);
   const [newFieldResponseName, setNewFieldResponseName] = useState('');
-  const [fieldsResponseCounter, setFieldsResponseCounter] = useState(1);
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);

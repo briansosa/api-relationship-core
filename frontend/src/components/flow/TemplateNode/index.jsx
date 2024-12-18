@@ -7,7 +7,7 @@ import './styles.css';
 const { Text } = Typography;
 
 // Componente para mostrar la estructura jerárquica del schema
-const SchemaNode = ({ name, value, level = 0, fullPath = '' }) => {
+const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFieldSelected, templateName }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
   const getNodeType = (val) => {
@@ -51,7 +51,12 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '' }) => {
     <div className="schema-node" style={{ marginLeft: level * 8 }}>
       <div className="schema-header">
         <div className="schema-header-left">
-          {!isExpandable && <Checkbox />}
+          {!isExpandable && (
+            <Checkbox
+              checked={isFieldSelected(templateName, handleId)}
+              onChange={(e) => onFieldSelect(templateName, handleId, e.target.checked)}
+            />
+          )}
           {isExpandable && (
             <CaretRightOutlined 
               className={`caret ${isExpanded ? 'expanded' : ''}`}
@@ -85,6 +90,9 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '' }) => {
               value={val}
               level={level + 1}
               fullPath={nodeType === 'array' ? `${currentPath}.#` : currentPath}
+              onFieldSelect={onFieldSelect}
+              isFieldSelected={isFieldSelected}
+              templateName={templateName}
             />
           ))}
         </div>
@@ -94,7 +102,7 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '' }) => {
 };
 
 // Componente TemplateNode principal
-const TemplateNode = ({ data, selected }) => {
+const TemplateNode = ({ data, selected, onFieldSelect, isFieldSelected }) => {
   const { template, responseSchema } = data;
   const [schemaData, setSchemaData] = useState(null);
   const [isConfigModalVisible, setIsConfigModalVisible] = useState(false);
@@ -263,6 +271,9 @@ const TemplateNode = ({ data, selected }) => {
                   key={key}
                   name={key}
                   value={val}
+                  onFieldSelect={onFieldSelect}
+                  isFieldSelected={isFieldSelected}
+                  templateName={template.name}
                 />
               ))}
             </div>
