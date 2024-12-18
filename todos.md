@@ -22,9 +22,11 @@ Operation Template -> Create and Delete Templates
 Operation Template -> Revisar si el backend soporta bodys, creo que no. Si no lo soporta entonces no hacemos los parametros de body ahora
 Diseñar el layout de la vista de flows
 Armando la vista de flows, ya cree el nodo input que se va agregando las propiedades que se van a mapear del archivo, tambien cree el nodo de los templates y como se conectan todos estos nodos. El del template tiene la parte de parametros y la parte de propiedades de respuesta con un check para a futuro usarlo para crear los responses fields del usuario
+Armando el CURL de flows, ya tengo el getall, el delete y el insert, ahora estoy con el update. Puntualmente implementando el rename que esta fallando por las propiedades
+Arreglado el delete, rename, visualizacion, actualizacion y como se muestran los flows. Es decir termine con la parte de flows.
 
 ##Lo que estoy ahora
-Armando el CURL de flows, ya tengo el getall, el delete y el insert, ahora estoy con el update. Puntualmente implementando el rename que esta fallando por las propiedades
+Voy a empezar a trabajar con los fields responses en la vista de flows
 
 ## Lo que falta
 

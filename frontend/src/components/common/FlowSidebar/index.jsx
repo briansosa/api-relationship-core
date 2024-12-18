@@ -1,9 +1,41 @@
 import React, { useState } from 'react';
-import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Tabs, Dropdown, Modal } from 'antd';
+import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Tabs, Dropdown, Modal, List, Collapse, Select, Divider } from 'antd';
 import { SearchOutlined, PlusOutlined, ApiOutlined, ShareAltOutlined, MoreOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Sider } = Layout;
 const { Text } = Typography;
+
+// Datos hardcodeados para FieldsResponse
+const MOCK_FIELDS_RESPONSE = [
+  {
+    id: "1",
+    name: "Ubicación completa",
+    fields_response: [
+      {
+        operation_name: "get-georeference",
+        field_response: "ubicacion.departamento.nombre"
+      },
+      {
+        operation_name: "location",
+        field_response: "direccionesNormalizadas.#.coordenadas.x"
+      }
+    ]
+  },
+  {
+    id: "2",
+    name: "Datos básicos",
+    fields_response: [
+      {
+        operation_name: "get-georeference",
+        field_response: "ubicacion.provincia.nombre"
+      },
+      {
+        operation_name: "location",
+        field_response: "direccionesNormalizadas.#.nombre_localidad"
+      }
+    ]
+  }
+];
 
 const FlowSidebar = ({ 
   loading = false,
@@ -20,6 +52,11 @@ const FlowSidebar = ({
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newFlowName, setNewFlowName] = useState('');
+  const [fieldsResponses, setFieldsResponses] = useState(MOCK_FIELDS_RESPONSE);
+  const [selectedFieldResponse, setSelectedFieldResponse] = useState(null);
+  const [isFieldResponseModalVisible, setIsFieldResponseModalVisible] = useState(false);
+  const [newFieldResponseName, setNewFieldResponseName] = useState('');
+  const [fieldsResponseCounter, setFieldsResponseCounter] = useState(1);
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
@@ -74,6 +111,122 @@ const FlowSidebar = ({
   const handleCancel = () => {
     setIsModalVisible(false);
   };
+
+  const handleAddFieldResponse = () => {
+    const newName = `New Fields Response ${fieldsResponseCounter}`;
+    const newFieldResponse = {
+      id: String(Date.now()),
+      name: newName,
+      fields_response: []
+    };
+    setFieldsResponses([...fieldsResponses, newFieldResponse]);
+    setFieldsResponseCounter(prev => prev + 1);
+  };
+
+  const handleFieldResponseModalOk = () => {
+    if (newFieldResponseName.trim()) {
+      const newFieldResponse = {
+        id: String(Date.now()),
+        name: newFieldResponseName,
+        fields_response: []
+      };
+      setFieldsResponses([...fieldsResponses, newFieldResponse]);
+    }
+    setIsFieldResponseModalVisible(false);
+  };
+
+  const groupFieldsByOperation = (fields) => {
+    return fields.reduce((acc, field) => {
+      if (!acc[field.operation_name]) {
+        acc[field.operation_name] = [];
+      }
+      acc[field.operation_name].push(field.field_response);
+      return acc;
+    }, {});
+  };
+
+  const FieldsResponseSection = () => (
+    <div style={{ 
+      borderTop: '1px solid #f0f0f0',
+      padding: '16px 8px',
+      height: '50vh',
+      overflow: 'auto'
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 8
+      }}>
+        <Text strong>Fields Response</Text>
+        <Space>
+          <Select
+            style={{ width: 180 }}
+            value={selectedFieldResponse}
+            onChange={setSelectedFieldResponse}
+            placeholder="Select Fields Response"
+            dropdownRender={(menu) => (
+              <>
+                {menu}
+                <Divider style={{ margin: '8px 0' }} />
+                <Button
+                  type="text"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddFieldResponse}
+                  style={{ width: '100%', textAlign: 'left' }}
+                >
+                  Add Fields Response
+                </Button>
+              </>
+            )}
+            options={fieldsResponses.map(item => ({
+              label: item.name,
+              value: item.id,
+            }))}
+          />
+          {selectedFieldResponse && (
+            <Space>
+              <Button 
+                type="text" 
+                icon={<EditOutlined />} 
+                size="small"
+              />
+              <Button 
+                type="text" 
+                icon={<DeleteOutlined />} 
+                size="small"
+              />
+            </Space>
+          )}
+        </Space>
+      </div>
+      {selectedFieldResponse && (
+        <div style={{ marginTop: 16 }}>
+          <Collapse defaultActiveKey={['1']} ghost>
+            {Object.entries(groupFieldsByOperation(
+              fieldsResponses.find(f => f.id === selectedFieldResponse)?.fields_response || []
+            )).map(([operation, fields], index) => (
+              <Collapse.Panel 
+                header={<Text strong>{operation}</Text>}
+                key={index}
+              >
+                <List
+                  size="small"
+                  dataSource={fields}
+                  renderItem={field => (
+                    <List.Item style={{ padding: '4px 0' }}>
+                      <Text style={{ fontSize: '12px' }}>{field}</Text>
+                    </List.Item>
+                  )}
+                />
+              </Collapse.Panel>
+            ))}
+          </Collapse>
+        </div>
+      )}
+    </div>
+  );
 
   const items = [
     {
@@ -190,12 +343,27 @@ const FlowSidebar = ({
           )}
         </div>
       )
+    },
+    {
+      key: 'fields-response',
+      label: (
+        <span>
+          <ApiOutlined />
+          Fields Response
+        </span>
+      ),
+      children: <FieldsResponseSection />
     }
   ];
 
   return (
     <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
-      <Tabs defaultActiveKey="flows" items={items} />
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <Tabs defaultActiveKey="flows" items={items.filter(item => item.key !== 'fields-response')} />
+        </div>
+        <FieldsResponseSection />
+      </div>
       <Modal
         title="Renombrar Flujo"
         visible={isModalVisible}
@@ -206,6 +374,18 @@ const FlowSidebar = ({
           value={newFlowName}
           onChange={(e) => setNewFlowName(e.target.value)}
           placeholder="Nuevo nombre del flujo"
+        />
+      </Modal>
+      <Modal
+        title="Nuevo Field Response"
+        open={isFieldResponseModalVisible}
+        onOk={handleFieldResponseModalOk}
+        onCancel={() => setIsFieldResponseModalVisible(false)}
+      >
+        <Input
+          value={newFieldResponseName}
+          onChange={(e) => setNewFieldResponseName(e.target.value)}
+          placeholder="Nombre del field response"
         />
       </Modal>
     </Sider>
