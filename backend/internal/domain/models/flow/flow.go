@@ -8,6 +8,7 @@ type Flow struct {
 	SearchType         string          `json:"search_type"`
 	RelationFields     []RelationField `json:"relation_fields"`
 	RelationOperations []Flow          `json:"relation_operations"`
+	FieldsResponseID   []string        `json:"fields_response_id"`
 }
 
 type RelationField struct {

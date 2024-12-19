@@ -29,6 +29,8 @@ type Definition struct {
 	OperationSchemaHandler   *handlers.OperationSchemaHandler
 	OperationTemplateHandler *handlers.OperationTemplateHandler
 	FlowHandler              *handlers.FlowHandler
+	FieldsResponseHandler    *handlers.FieldsResponseHandler
+
 	//
 	// Services
 	//
@@ -61,6 +63,7 @@ func (d *Definition) Startup(context context.Context) {
 	d.OperationSchemaHandler.Context = &context
 	d.OperationTemplateHandler.Context = &context
 	d.FlowHandler.Context = &context
+	d.FieldsResponseHandler.Context = &context
 }
 
 func (d *Definition) GetBinds() []interface{} {
@@ -68,6 +71,7 @@ func (d *Definition) GetBinds() []interface{} {
 		d.OperationSchemaHandler,
 		d.OperationTemplateHandler,
 		d.FlowHandler,
+		d.FieldsResponseHandler,
 	}
 }
 
@@ -118,6 +122,7 @@ func initDependencies(environment string) Definition {
 	d.OperationSchemaHandler = handlers.NewOperationSchemaHandler(d.PersistenceService, d.HttpClientService)
 	d.OperationTemplateHandler = handlers.NewOperationTemplateHandler(d.PersistenceService, d.HttpClientService)
 	d.FlowHandler = handlers.NewFlowHandler(d.PersistenceService, d.HttpClientService)
+	d.FieldsResponseHandler = handlers.NewFieldsResponseHandler(d.PersistenceService, d.HttpClientService)
 
 	return d
 }

@@ -12,7 +12,8 @@ import FlowToolbar from '../../components/flow/FlowToolbar';
 
 import { GetAllSchemasWithTemplates } from '../../../wailsjs/go/handlers/OperationSchemaHandler';
 import { GetAllFlows, InsertFlow, GetFlow, DeleteFlow, UpdateFlow } from '../../../wailsjs/go/handlers/FlowHandler';
-import { flow } from '../../../wailsjs/go/models';
+import { InsertFieldsResponse, GetFieldsResponseByFlowID, UpdateFieldsResponse } from '../../../wailsjs/go/handlers/FieldsResponseHandler';
+
 // Definimos nodeTypes fuera del componente
 const NODE_TYPES = {
   template: TemplateNode,
@@ -49,6 +50,12 @@ const MOCK_FIELDS_RESPONSE = [
         field_response: "direccionesNormalizadas.#.nombre_localidad"
       }
     ]
+  },
+  {
+    id: "3",
+    name: "Datos básico hardcoded",
+    fields_response: [
+    ]
   }
 ];
 
@@ -63,15 +70,20 @@ const FlowView = () => {
     max_concurrency: 1,
     search_type: "simple",
     relation_fields: [],
-    relation_operations: []
+    relation_operations: [],
+    fields_response_id: []
   };
+
+  const entityInitFieldsResponse = {
+    id: "0",
+    name: "",
+    flow_id: "",
+    fields_response: []
+  };
+
   // Nuevo estado para Fields Response
   const [fieldsResponses, setFieldsResponses] = useState(MOCK_FIELDS_RESPONSE);
-  const [selectedFieldResponse, setSelectedFieldResponse] = useState(null);
-  const [fieldsResponseCounter, setFieldsResponseCounter] = useState(1);
   
- 
-
   // Hooks
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -80,7 +92,9 @@ const FlowView = () => {
     entity: entityInit,
     id: urlParams.id ? urlParams.id : "0",
     flows: [],
-    disable: true
+    disable: true,
+    fieldsResponses: [],
+    fieldResponseSelected: entityInitFieldsResponse
   });
 
   const edgesRef = useRef([]);
@@ -112,49 +126,47 @@ const FlowView = () => {
 
    // Manejador para cuando se selecciona un checkbox en TemplateNode
    const handleFieldSelect = useCallback((templateName, fieldPath, isChecked) => {
-    console.log("handleFieldSelect called with:", { templateName, fieldPath, isChecked, selectedFieldResponse });
+     console.log("entrando a handleFieldSelect");
+     if (!state.fieldResponseSelected) return;
 
-    if (!selectedFieldResponse) return;
-
-    setFieldsResponses(prev => {
-      const updatedResponses = prev.map(fr => {
-        if (fr.id === selectedFieldResponse) {
-          const newFields = isChecked 
-            ? [...fr.fields_response, {
-                operation_name: templateName,
-                field_response: fieldPath
-              }]
-            : fr.fields_response.filter(f => 
-                !(f.operation_name === templateName && f.field_response === fieldPath)
-              );
-          
-          console.log("Updated fields for response:", { newFields });
-          return {
-            ...fr,
-            fields_response: newFields
-          };
+    let newFields = [];
+    if (isChecked) {
+      newFields = [
+        ...state.fieldResponseSelected.fields_response, // Cambié 'fieldsResponses' a 'fieldResponseSelected'
+        {
+          operation_name: templateName,
+          field_response: fieldPath
         }
-        return fr;
-      });
-      console.log("Updated fieldsResponses:", updatedResponses);
-      return updatedResponses;
-    });
-  }, [selectedFieldResponse]);
+      ];
+    } else {
+      newFields = state.fieldResponseSelected.fields_response.filter(f => 
+        !(f.operation_name === templateName && f.field_response === fieldPath)
+      );
+    }
+
+    console.log("newFields", newFields);
+
+    setState(prevState => ({
+      ...prevState,
+      fieldResponseSelected: {
+        ...prevState.fieldResponseSelected,
+        fields_response: newFields
+      }
+    }));
+
+
+  }, [state.fieldResponseSelected]);
 
   // Función para verificar si un campo está seleccionado
   const isFieldSelected = useCallback((templateName, fieldPath) => {
-    console.log("isFieldSelected called with:", { templateName, fieldPath, selectedFieldResponse });
+    if (!state.fieldResponseSelected) return false;
 
-    if (!selectedFieldResponse) return false;
-
-    const currentFR = fieldsResponses.find(fr => fr.id === selectedFieldResponse);
-    const isSelected = currentFR?.fields_response.some(f => 
+    const isSelected = state.fieldResponseSelected.fields_response.some(f => 
       f.operation_name === templateName && f.field_response === fieldPath
     );
 
-    console.log("Field selected status:", isSelected);
     return isSelected;
-  }, [selectedFieldResponse, fieldsResponses]);
+  }, [state.fieldResponseSelected]);
 
   // Memoizamos nodeTypes después de definir las funciones necesarias
   const nodeTypes = useMemo(() => ({
@@ -187,8 +199,6 @@ const FlowView = () => {
       />
     ),
   }), [handleFieldSelect, isFieldSelected, setNodes]);
-
-
 
 
   const handleTemplateSelect = (templateId) => {
@@ -242,20 +252,6 @@ const FlowView = () => {
 
   // Handlers
 
-  // Manejador para actualizar nodos que pasaremos al TemplateNode
-  const handleNodeChange = useCallback((changes) => {
-    setNodes((nds) => {
-      return nds.map(node => {
-        const change = changes.find(c => c.id === node.id);
-        if (change) {
-          return { ...node, ...change };
-        }
-        return node;
-      });
-    });
-  }, [setNodes]);
-
-
   // Manejador para eliminar nodos
   const handleNodesDelete = useCallback((nodesToDelete) => {
     setNodes(nodes => nodes.filter(node => 
@@ -263,8 +259,8 @@ const FlowView = () => {
     ));
   }, [setNodes]);
 
+
   const handleAddFlow = () => {
-    console.log("Iniciando creación de nuevo flow");
     const randomId = new ShortUniqueId().rnd();
     const entity = {
       id: randomId,
@@ -325,6 +321,16 @@ const FlowView = () => {
     }
 
     UpdateOperationFlow(flowEntity);
+  };
+
+  const handleFieldsResponseSelect = (fieldResponseId) => {
+    const fieldResponseEntity = state.fieldsResponses.find(fr => fr.id === fieldResponseId);
+    
+    console.log("handleFieldsResponseSelect", fieldResponseEntity);
+    setState(prevState => ({
+      ...prevState,
+      fieldResponseSelected: fieldResponseEntity
+    }));
   };
 
   // Función auxiliar para procesar un nodo y sus conexiones
@@ -467,11 +473,19 @@ const FlowView = () => {
       max_concurrency: firstTemplateNode.data.template.max_concurrency || 1,
       search_type: firstTemplateNode.data.template.search_type || "",
       relation_fields: relationFields,
-      relation_operations: relationOperations || []
+      relation_operations: relationOperations || [],
+      fields_response_id: state.entity.fields_response_id
     };
 
     console.log('Entidad a guardar:', flowEntity);
-    UpdateOperationFlow(flowEntity);
+    console.log('Fields response guardar:', state.fieldResponseSelected);
+    
+    UpdateFieldsResponse(state.fieldResponseSelected).then(() => {
+      UpdateOperationFlow(flowEntity);
+    }).catch((error) => {
+      console.error('Error updating fields response:', error);
+    });
+    
   };
 
   // Functions
@@ -490,19 +504,30 @@ const FlowView = () => {
       });
   }
 
-  function InsertOperationFlow(flow) {
-    console.log("InsertOperationFlow - iniciando inserción:", {
-      flow,
-      currentNodes: nodes.length
-    });
+  function InsertOperationFieldsResponse(flowId) {
+    const uid = new ShortUniqueId();
     
+    const fieldsResponse = {
+      id: uid.rnd(),
+      name: "New Fields Response",
+      flow_id: flowId,
+      fields_response: []
+    }
+
+    InsertFieldsResponse(fieldsResponse).then((result) => {
+      console.log("result fields response", result);
+      setState(prevState => ({
+        ...prevState,
+        fieldsResponses: [...prevState.fieldsResponses, result]
+      }));
+    }).catch((error) => {
+      console.error('Error inserting fields response:', error);
+    });
+  }
+
+  function InsertOperationFlow(flow) {  
     InsertFlow(flow)
       .then((result) => {
-        console.log("InsertOperationFlow - flow insertado:", {
-          result,
-          currentNodes: nodes.length
-        });
-        
         setState(prevState => ({
           ...prevState,
           entity: {
@@ -510,6 +535,8 @@ const FlowView = () => {
             id: result.id
           }
         }));
+
+        InsertOperationFieldsResponse(result.id);
 
         // Inicializar el canvas con un nodo input
         const inputNode = {
@@ -522,15 +549,11 @@ const FlowView = () => {
           draggable: true
         };
 
-        console.log("InsertOperationFlow - antes de setNodes:", {
-          inputNode,
-          currentNodes: nodes.length
-        });
+
         setNodes([inputNode]);
         setEdges([]);
 
         const url = `/flow/${result.id}/edit`;
-        console.log("InsertOperationFlow - redirigiendo a:", url);
         navigate(url);
       })
       .catch((error) => {
@@ -541,6 +564,8 @@ const FlowView = () => {
   function GetOperationFlow(id) {
     GetFlow(id)
       .then(flowResult => {
+
+        console.log("get operation flow", flowResult);
         setState(prevState => ({
           ...prevState,
           entity: flowResult,
@@ -552,7 +577,21 @@ const FlowView = () => {
           setSchemas(schemasResult);
           LoadNodes(flowResult, schemasResult);
         });
+
         GetAllOperationsFlow();
+
+        GetFieldsResponseByFlowID(flowResult.id)
+          .then((fieldsResponseResult) => {
+            setState(prevState => ({
+              ...prevState,
+              fieldsResponses: fieldsResponseResult,
+              fieldResponseSelected: fieldsResponseResult.length > 0 ? fieldsResponseResult[0] : prevState.fieldResponseSelected
+            }));
+            console.log("fields response", fieldsResponseResult);
+          })
+          .catch((error) => {
+            console.error('Error getting fields response by flow id:', error);
+          });
       })
       .catch((error) => {
         console.error('Error en GetOperationFlow:', error);
@@ -714,30 +753,22 @@ const FlowView = () => {
     edgesRef.current = newEdges;
   }
 
-  // Al renderizar el componente
-  console.log("FlowView rendered with states:", {
-    fieldsResponses,
-    selectedFieldResponse,
-    nodes,
-    edges
-  });
-
   return (
     <Layout style={{ height: '100vh' }}>
       <FlowSidebar
         schemas={schemas}
+        flows={state.flows}
+        fieldsResponses={state.fieldsResponses}
+        fieldResponseSelected={state.fieldResponseSelected}
         onAddFlow={handleAddFlow}
-        onTemplateSelect={handleTemplateSelect}
-        onFlowSelect={handleFlowSelect}
         onDeleteFlow={handleDeleteFlow}
         onRenameFlow={handleRenameFlow}
-        flows={state.flows}
-        fieldsResponses={fieldsResponses}
-        selectedFieldResponse={selectedFieldResponse}
-        setSelectedFieldResponse={setSelectedFieldResponse}
+        onFlowSelect={handleFlowSelect}
+        onTemplateSelect={handleTemplateSelect}
+        onFieldsResponseSelect={handleFieldsResponseSelect}
+
+        // este es para el modal y el rename
         setFieldsResponses={setFieldsResponses}
-        fieldsResponseCounter={fieldsResponseCounter}
-        setFieldsResponseCounter={setFieldsResponseCounter}
       />
       <Layout>
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>

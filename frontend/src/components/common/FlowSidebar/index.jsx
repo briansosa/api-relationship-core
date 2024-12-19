@@ -9,17 +9,15 @@ const FlowSidebar = ({
   loading = false,
   schemas = [],
   flows = [],
+  fieldsResponses,
   onTemplateSelect,
   onAddFlow,
   onFlowSelect,
   onDeleteFlow,
   onRenameFlow,
-  fieldsResponses,
-  selectedFieldResponse,
-  setSelectedFieldResponse,
+  onFieldsResponseSelect,
+  fieldResponseSelected,
   setFieldsResponses,
-  fieldsResponseCounter,
-  setFieldsResponseCounter
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedFlowId, setSelectedFlowId] = useState(null);
@@ -28,6 +26,7 @@ const FlowSidebar = ({
   const [newFlowName, setNewFlowName] = useState('');
   const [isFieldResponseModalVisible, setIsFieldResponseModalVisible] = useState(false);
   const [newFieldResponseName, setNewFieldResponseName] = useState('');
+  const [fieldsResponseCounter, setFieldsResponseCounter] = useState(0);
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
@@ -106,14 +105,18 @@ const FlowSidebar = ({
     setIsFieldResponseModalVisible(false);
   };
 
-  const groupFieldsByOperation = (fields) => {
-    return fields.reduce((acc, field) => {
+  const groupFieldsByOperation = () => {   
+    const fields = fieldResponseSelected?.fields_response || []
+
+    const groupedFields = fields.reduce((acc, field) => {
       if (!acc[field.operation_name]) {
         acc[field.operation_name] = [];
       }
       acc[field.operation_name].push(field.field_response);
       return acc;
     }, {});
+
+    return Object.entries(groupedFields);
   };
 
   const FieldsResponseSection = () => (
@@ -130,12 +133,13 @@ const FlowSidebar = ({
         marginBottom: 16,
         gap: 8
       }}>
-        <Text strong>Fields Response</Text>
+       
         <Space>
+        <Text strong>Fields Response</Text>
           <Select
             style={{ width: 180 }}
-            value={selectedFieldResponse}
-            onChange={setSelectedFieldResponse}
+            value={fieldResponseSelected.id}
+            onChange={onFieldsResponseSelect}
             placeholder="Select Fields Response"
             dropdownRender={(menu) => (
               <>
@@ -156,7 +160,7 @@ const FlowSidebar = ({
               value: item.id,
             }))}
           />
-          {selectedFieldResponse && (
+          {fieldResponseSelected && (
             <Space>
               <Button 
                 type="text" 
@@ -172,12 +176,10 @@ const FlowSidebar = ({
           )}
         </Space>
       </div>
-      {selectedFieldResponse && (
+      {fieldResponseSelected && (
         <div style={{ marginTop: 16 }}>
           <Collapse defaultActiveKey={['1']} ghost>
-            {Object.entries(groupFieldsByOperation(
-              fieldsResponses.find(f => f.id === selectedFieldResponse)?.fields_response || []
-            )).map(([operation, fields], index) => (
+            {groupFieldsByOperation().map(([operation, fields], index) => (
               <Collapse.Panel 
                 header={<Text strong>{operation}</Text>}
                 key={index}
