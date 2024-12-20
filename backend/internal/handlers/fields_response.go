@@ -83,6 +83,33 @@ func (h FieldsResponseHandler) InsertFieldsResponse(fieldResponse flowfieldsresp
 }
 
 func (h FieldsResponseHandler) DeleteFieldsResponse(id string) error {
-	err := h.persistenceService.DeleteFieldsResponse(id)
+	fieldsResponse, err := h.persistenceService.GetFieldsResponse(id)
+	if err != nil {
+		return err
+	}
+
+	flow, err := h.persistenceService.GetFlow(fieldsResponse.FlowID)
+	if err != nil {
+		return err
+	}
+
+	for index, fieldsResponseID := range flow.FieldsResponseID {
+		if fieldsResponseID == id {
+			if index+1 < len(flow.FieldsResponseID) {
+				flow.FieldsResponseID = append(flow.FieldsResponseID[:index], flow.FieldsResponseID[index+1:]...)
+				break
+			}
+
+			flow.FieldsResponseID = flow.FieldsResponseID[:index]
+			break
+		}
+	}
+
+	err = h.persistenceService.UpdateFlow(flow.ID, flow)
+	if err != nil {
+		return err
+	}
+
+	err = h.persistenceService.DeleteFieldsResponse(id)
 	return err
 }

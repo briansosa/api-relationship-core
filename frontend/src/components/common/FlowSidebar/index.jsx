@@ -9,15 +9,17 @@ const FlowSidebar = ({
   loading = false,
   schemas = [],
   flows = [],
-  fieldsResponses,
   onTemplateSelect,
   onAddFlow,
   onFlowSelect,
   onDeleteFlow,
   onRenameFlow,
-  onFieldsResponseSelect,
+  fieldsResponses,
   fieldResponseSelected,
-  setFieldsResponses,
+  onFieldsResponseSelect,
+  onAddFieldResponse,
+  onDeleteFieldResponse,
+  onRenameFieldResponse,
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedFlowId, setSelectedFlowId] = useState(null);
@@ -26,7 +28,6 @@ const FlowSidebar = ({
   const [newFlowName, setNewFlowName] = useState('');
   const [isFieldResponseModalVisible, setIsFieldResponseModalVisible] = useState(false);
   const [newFieldResponseName, setNewFieldResponseName] = useState('');
-  const [fieldsResponseCounter, setFieldsResponseCounter] = useState(0);
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
@@ -83,26 +84,30 @@ const FlowSidebar = ({
   };
 
   const handleAddFieldResponse = () => {
-    const newName = `New Fields Response ${fieldsResponseCounter}`;
+    let newName = "New Fields Response";
+    let counter = 1;
+
+    while (fieldsResponses.some(field => field.name === newName)) {
+      newName = `New Fields Response ${counter}`;
+      counter++;
+    }
+
     const newFieldResponse = {
-      id: String(Date.now()),
+      id: "",
       name: newName,
       fields_response: []
     };
-    setFieldsResponses([...fieldsResponses, newFieldResponse]);
-    setFieldsResponseCounter(prev => prev + 1);
+    
+    onAddFieldResponse(newFieldResponse);
   };
 
   const handleFieldResponseModalOk = () => {
-    if (newFieldResponseName.trim()) {
-      const newFieldResponse = {
-        id: String(Date.now()),
-        name: newFieldResponseName,
-        fields_response: []
-      };
-      setFieldsResponses([...fieldsResponses, newFieldResponse]);
-    }
+    onRenameFieldResponse(newFieldResponseName);
     setIsFieldResponseModalVisible(false);
+  };
+
+  const handleRenameFieldResponse = () => {
+    setIsFieldResponseModalVisible(true);
   };
 
   const groupFieldsByOperation = () => {   
@@ -127,32 +132,32 @@ const FlowSidebar = ({
       overflow: 'auto'
     }}>
       <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
         marginBottom: 16,
         gap: 8
       }}>
-       
-        <Space>
         <Text strong>Fields Response</Text>
+        <Space>
           <Select
             style={{ width: 180 }}
-            value={fieldResponseSelected.id}
+            value={fieldResponseSelected ? fieldResponseSelected.id : undefined}
             onChange={onFieldsResponseSelect}
             placeholder="Select Fields Response"
             dropdownRender={(menu) => (
               <>
                 {menu}
-                <Divider style={{ margin: '8px 0' }} />
-                <Button
-                  type="text"
-                  icon={<PlusOutlined />}
-                  onClick={handleAddFieldResponse}
-                  style={{ width: '100%', textAlign: 'left' }}
-                >
-                  Add Fields Response
-                </Button>
+                {fieldResponseSelected && (
+                  <>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={handleAddFieldResponse}
+                      style={{ width: '100%', textAlign: 'left' }}
+                    >
+                      Add Fields Response
+                    </Button>
+                  </>
+                )}
               </>
             )}
             options={fieldsResponses.map(item => ({
@@ -165,11 +170,13 @@ const FlowSidebar = ({
               <Button 
                 type="text" 
                 icon={<EditOutlined />} 
+                onClick={handleRenameFieldResponse}
                 size="small"
               />
               <Button 
                 type="text" 
                 icon={<DeleteOutlined />} 
+                onClick={() => onDeleteFieldResponse(fieldResponseSelected.id)}
                 size="small"
               />
             </Space>
@@ -339,7 +346,7 @@ const FlowSidebar = ({
       </div>
       <Modal
         title="Renombrar Flujo"
-        visible={isModalVisible}
+        open={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
       >
@@ -350,7 +357,7 @@ const FlowSidebar = ({
         />
       </Modal>
       <Modal
-        title="Nuevo Field Response"
+        title="Rename Field Response"
         open={isFieldResponseModalVisible}
         onOk={handleFieldResponseModalOk}
         onCancel={() => setIsFieldResponseModalVisible(false)}
@@ -358,7 +365,7 @@ const FlowSidebar = ({
         <Input
           value={newFieldResponseName}
           onChange={(e) => setNewFieldResponseName(e.target.value)}
-          placeholder="Nombre del field response"
+          placeholder="Field response name"
         />
       </Modal>
     </Sider>
