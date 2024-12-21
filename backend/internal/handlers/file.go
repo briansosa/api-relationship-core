@@ -1,14 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 
 	"github.com/api-relationship-core/backend/internal/domain/models/file"
 	"github.com/api-relationship-core/backend/internal/domain/ports"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type FileHandler struct {
 	fileService ports.FileService
+	Context     *context.Context
 }
 
 func NewFileHandler(fileService ports.FileService) *FileHandler {
@@ -29,4 +33,13 @@ func (handler *FileHandler) ParseToCsv(filename *string) (*file.FileOutput, erro
 
 	return result, nil
 
+}
+
+func (h *FileHandler) ReadCSVFile(filePath string) (string, error) {
+	result, err := runtime.OpenFileDialog(*h.Context, runtime.OpenDialogOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }

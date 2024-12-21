@@ -24,12 +24,12 @@ type Definition struct {
 	// Handlers
 	//
 
-	ProcessHandler           *handlers.ProcessHandler
-	FileHandler              *handlers.FileHandler
 	OperationSchemaHandler   *handlers.OperationSchemaHandler
 	OperationTemplateHandler *handlers.OperationTemplateHandler
 	FlowHandler              *handlers.FlowHandler
 	FieldsResponseHandler    *handlers.FieldsResponseHandler
+	ProcessHandler           *handlers.ProcessHandler
+	FileHandler              *handlers.FileHandler
 
 	//
 	// Services
@@ -64,6 +64,8 @@ func (d *Definition) Startup(context context.Context) {
 	d.OperationTemplateHandler.Context = &context
 	d.FlowHandler.Context = &context
 	d.FieldsResponseHandler.Context = &context
+	d.ProcessHandler.Context = &context
+	d.FileHandler.Context = &context
 }
 
 func (d *Definition) GetBinds() []interface{} {
@@ -72,6 +74,8 @@ func (d *Definition) GetBinds() []interface{} {
 		d.OperationTemplateHandler,
 		d.FlowHandler,
 		d.FieldsResponseHandler,
+		d.ProcessHandler,
+		d.FileHandler,
 	}
 }
 
@@ -117,7 +121,7 @@ func initDependencies(environment string) Definition {
 	// Handlers
 	//
 
-	d.ProcessHandler = handlers.NewProcessHandler(d.ProcessService)
+	d.ProcessHandler = handlers.NewProcessHandler(d.ProcessService, d.PersistenceService)
 	d.FileHandler = handlers.NewFileHandler(d.FileService)
 	d.OperationSchemaHandler = handlers.NewOperationSchemaHandler(d.PersistenceService, d.HttpClientService)
 	d.OperationTemplateHandler = handlers.NewOperationTemplateHandler(d.PersistenceService, d.HttpClientService)

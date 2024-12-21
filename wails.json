@@ -8,6 +8,9 @@
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "Brian Sosa",
-    "email": ""
+    "email": "sosa_brian@live.com"
+  },
+  "window": {
+    "allowFileDrop": true
   }
 }

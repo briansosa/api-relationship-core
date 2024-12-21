@@ -1,3 +1,20 @@
+export namespace file {
+	
+	export class FileOutput {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new FileOutput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+
+}
+
 export namespace flow {
 	
 	export class RelationField {
@@ -222,6 +239,35 @@ export namespace operationparameter {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace process {
+	
+	export class Process {
+	    id: string;
+	    name: string;
+	    flow_id: string;
+	    fields_response_id: string;
+	    input: string;
+	    status: string;
+	    output_filename: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Process(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.flow_id = source["flow_id"];
+	        this.fields_response_id = source["fields_response_id"];
+	        this.input = source["input"];
+	        this.status = source["status"];
+	        this.output_filename = source["output_filename"];
+	    }
 	}
 
 }

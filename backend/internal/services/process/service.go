@@ -3,7 +3,6 @@ package process
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -174,9 +173,9 @@ func (service *ProcessService) initializeProcess(process *process.Process) error
 		return err
 	}
 
-	inputPath := files.GetSchemaPath("input")
-	inputPath = filepath.Join(inputPath, fmt.Sprintf("%s.%s", process.Input, "csv"))
-	records, err := csv.ReadCsv(inputPath)
+	//inputPath := files.GetSchemaPath("input")
+	//inputPath = filepath.Join(inputPath, fmt.Sprintf("%s.%s", process.Input, "csv"))
+	records, err := csv.ReadCsv(process.Input)
 	if err != nil {
 		return err
 	}

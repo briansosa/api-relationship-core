@@ -26,13 +26,6 @@ const FlowView = () => {
     relation_operations: [],
     fields_response_id: []
   };
-
-  const entityInitFieldsResponse = {
-    id: "0",
-    name: "",
-    flow_id: "",
-    fields_response: []
-  };
   
   // Hooks
   const edgesRef = useRef([]);
@@ -274,8 +267,6 @@ const FlowView = () => {
 
   const handleFieldsResponseSelect = (fieldResponseId) => {
     const fieldResponseEntity = state.fieldsResponses.find(fr => fr.id === fieldResponseId);
-    
-    console.log("handleFieldsResponseSelect", fieldResponseEntity);
     setState(prevState => ({
       ...prevState,
       fieldResponseSelected: fieldResponseEntity
@@ -450,7 +441,6 @@ const FlowView = () => {
   };
 
   const handleDeleteFieldResponse = (fieldResponseId) => {
-    console.log('handleDeleteFieldResponse', fieldResponseId);
     if (state.fieldsResponses.length == 1) {
       console.log('No se puede eliminar, es el único elemento en la lista.');
       return
@@ -460,13 +450,10 @@ const FlowView = () => {
   };
 
   const handleRenameFieldResponse = (newName) => {
-    console.log('handleRenameFieldResponse', newName);
-
     const fieldResponseEntity = state.fieldResponseSelected;
     fieldResponseEntity.name = newName;
 
     UpdateFieldsResponse(fieldResponseEntity);
-    //RenameOperationFieldsResponse(fieldResponseId, newName);
   };
 
   // Functions
@@ -474,7 +461,6 @@ const FlowView = () => {
   function GetAllOperationsFlow() {
     GetAllFlows()
       .then((result) => {
-        console.log("result flows", result);
         setState(prevState => ({
           ...prevState,
           flows: result
@@ -487,8 +473,6 @@ const FlowView = () => {
 
   function InsertOperationFieldsResponse(fieldsResponse) {
     return InsertFieldsResponse(fieldsResponse).then((result) => {
-      console.log("result fields response", result);
-
       setState(prevState => ({
         ...prevState,
         fieldsResponses: [...prevState.fieldsResponses, result],
@@ -515,7 +499,6 @@ const FlowView = () => {
 
   function DeleteOperationFieldsResponse(fieldsResponseId) {
     DeleteFieldsResponse(fieldsResponseId).then((result) => {
-      console.log("result fields response", result);
       const url = `/flow/${state.entity.id}/edit`;
       navigate(url);
     }).catch((error) => {
@@ -543,7 +526,6 @@ const FlowView = () => {
   function InsertOperationFlow(flow) {  
     InsertFlow(flow)
       .then((result) => {
-        console.log("result insert flow", result);
         setState(prevState => ({
           ...prevState,
           entity: {
@@ -588,8 +570,6 @@ const FlowView = () => {
   function GetOperationFlow(id) {
     GetFlow(id)
       .then(flowResult => {
-
-        console.log("get operation flow", flowResult);
         setState(prevState => ({
           ...prevState,
           entity: flowResult,
@@ -611,7 +591,6 @@ const FlowView = () => {
               fieldsResponses: fieldsResponseResult,
               fieldResponseSelected: fieldsResponseResult.length > 0 ? fieldsResponseResult[0] : prevState.fieldResponseSelected
             }));
-            console.log("fields response", fieldsResponseResult);
           })
           .catch((error) => {
             console.error('Error getting fields response by flow id:', error);

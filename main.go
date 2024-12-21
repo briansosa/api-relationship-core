@@ -8,6 +8,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -17,7 +18,6 @@ func main() {
 	definition := dependencies.NewByEnvironment()
 	binds := definition.GetBinds()
 
-	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "api-relationship-core",
 		Width:  1024,
@@ -35,6 +35,10 @@ func main() {
 				Title:   "Sherlock",
 				Message: "©2024 Created by Brian Sosa with ♡",
 			},
+		},
+		Windows: &windows.Options{
+			WebviewIsTransparent: true,
+			WindowIsTranslucent:  true,
 		},
 	})
 
