@@ -106,8 +106,19 @@ func (service *ProcessService) Process(process *process.Process) (*process.Proce
 				return memory, service.handleError(err, errorcustom.NewApiCallError, processObject.flow.Name)
 			}
 
+			primerJsonOperationsFieldsResponse, _ := json.MarshalIndent(operationsFieldsResponse, "", "  ")
+			fmt.Println("primera pegada operations fields response print", string(primerJsonOperationsFieldsResponse))
+			primerJsonResponse, _ := json.MarshalIndent(response, "", "  ")
+			fmt.Println("primera pegada response print", string(primerJsonResponse))
+			primerJsonFlowName, _ := json.MarshalIndent(processObject.flow.Name, "", "  ")
+			fmt.Println("primera pegada flow name print", string(primerJsonFlowName))
+			primerJsonMemory, _ := json.MarshalIndent(memory, "", "  ")
+			fmt.Println("primera pegada memory print", string(primerJsonMemory))
+
+			// Hay problemas con el processObject.flow.Name, el metodo espera que sea el Name del Template
+
 			// Save response in memory
-			err = saveResponseInMemory(&memory, operationsFieldsResponse, processObject.flow.Name, response)
+			err = saveResponseInMemory(&memory, operationsFieldsResponse, *initialOperationSchema.Name, response)
 			if err != nil {
 				return memory, service.handleError(err, errorcustom.NewSaveMemoryError, processObject.flow.Name)
 			}
@@ -186,7 +197,7 @@ func (service *ProcessService) initializeProcess(process *process.Process) error
 	process.OutputFilename = outputFilename
 
 	process.Status = "pending"
-	processResult, err := service.persistenceService.InsertProcess(*process)
+	err = service.persistenceService.UpdateProcess(process.ID, *process)
 	if err != nil {
 		return err
 	}
@@ -195,7 +206,7 @@ func (service *ProcessService) initializeProcess(process *process.Process) error
 	fillTaskManager(taskmanager, flow)
 
 	service.processItems = &processObjects{
-		process:            &processResult,
+		process:            process,
 		flow:               flow,
 		flowFieldsResponse: fieldsResponse,
 		headers:            records[0],
@@ -219,6 +230,16 @@ func (service *ProcessService) makeCallsToRelationOperations(relationOperations 
 
 		operationProcess := operation.NewOperationProcess(operationSchema)
 		fillOperationProcess(&operationSchema, operationProcess)
+
+		jsonOperationProcess, _ := json.MarshalIndent(operationProcess, "", "  ")
+		fmt.Println("operation process print", string(jsonOperationProcess))
+		jsonRelationOperation, _ := json.MarshalIndent(relationOperation, "", "  ")
+		fmt.Println("relation operation print", string(jsonRelationOperation))
+		jsonSchema, _ := json.MarshalIndent(operationSchema, "", "  ")
+		fmt.Println("schema print", string(jsonSchema))
+		jsonMemory, _ := json.MarshalIndent(*memory, "", "  ")
+		fmt.Println("memory print", string(jsonMemory))
+		// Viene porque no se estan seteando bien al principio los valores en el memory de la primer pegada.
 
 		// Build Operation Process. Replace parameters and set value record.
 		operationsProcess, err := buildOperationProcess(&operationProcess, relationOperation.RelationFields, relationOperation.SearchType, &operationSchema, memory)
