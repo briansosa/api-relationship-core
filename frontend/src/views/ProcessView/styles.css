@@ -1,0 +1,15 @@
+#process-view .ant-card .ant-card-body {
+    padding: 0px !important;
+}
+
+
+.output-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.ant-card {
+    margin-bottom: 10px;
+}

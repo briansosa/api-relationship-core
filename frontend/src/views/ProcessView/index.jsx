@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import ShortUniqueId from 'short-unique-id';
-import { Layout, Card, Badge, Button, Row, Col, Modal, Form, Input, Select, Upload } from 'antd';
-import { PlusOutlined, PlayCircleOutlined, CopyOutlined, UploadOutlined } from '@ant-design/icons';
+import './styles.css';
+import { Layout, Card, Badge, Button, Row, Col, Modal, Form, Input, Select, Upload, Pagination } from 'antd';
+import { PlusOutlined, PlayCircleOutlined, CopyOutlined, UploadOutlined, CloseOutlined } from '@ant-design/icons';
 
-import { GetAllProcesses, CreateProcess, StartProcess } from "../../../wailsjs/go/handlers/ProcessHandler";
+import { GetAllProcesses, CreateProcess, StartProcess, DeleteProcess } from "../../../wailsjs/go/handlers/ProcessHandler";
 import { GetAllFlows } from "../../../wailsjs/go/handlers/FlowHandler";
-import { GetFieldsResponseByFlowID } from "../../../wailsjs/go/handlers/FieldsResponseHandler";
+import { GetFieldsResponseByFlowID, GetAllFieldsResponses } from "../../../wailsjs/go/handlers/FieldsResponseHandler";
 import { ReadCSVFile } from "../../../wailsjs/go/handlers/FileHandler";
 
 
@@ -17,6 +18,7 @@ function ProcessView() {
     const [form] = Form.useForm();
     const [uploadedFile, setUploadedFile] = useState(null);
     const [uploadedFileName, setUploadedFileName] = useState("");
+    const [formFieldsResponse, setFormFieldsResponse] = useState([]);
 
     const [state, setState] = useState({
         listProcesses: [],
@@ -24,20 +26,33 @@ function ProcessView() {
         listFieldsResponses: [],
     });
 
+    // Paginación
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(12);
+
     const mount = () => {
-        GetListProcesses();
+        GetListProcesses()
         GetListFlows();
+        GetListFieldsResponses();
+
+        const intervalId = setInterval(() => {
+            GetListProcesses();
+        }, 3000);
+        
+        return () => clearInterval(intervalId);
     }
 
     useEffect(mount, []);
+
 
     // Handlers
 
     function GetListProcesses() {
         GetAllProcesses().then((response) => {
+            console.log("response list processes", response);
             setState((prevState) => ({
                 ...prevState,
-                listProcesses: response,
+                listProcesses: response.sort((a, b) => b.id - a.id),
             }));
         }).catch((error) => {
             console.log(error);
@@ -55,8 +70,8 @@ function ProcessView() {
         });
     }
 
-    function GetListFieldsResponses(flowId) {
-        GetFieldsResponseByFlowID(flowId).then((response) => {
+    function GetListFieldsResponses() {
+        GetAllFieldsResponses().then((response) => {
             setState((prevState) => ({
                 ...prevState,
                 listFieldsResponses: response,
@@ -66,11 +81,19 @@ function ProcessView() {
         });
     }
 
+    function GetListFieldsResponsesByFlowID(flowId) {
+        GetFieldsResponseByFlowID(flowId).then((response) => {
+            setFormFieldsResponse(response);
+        }).catch((error) => {
+            console.log(error);
+        });
+    }
+
     const getStatusBadge = (status) => {
         const statusConfig = {
-            completed: { status: 'success', text: 'Completado' },
-            running: { status: 'processing', text: 'En proceso' },
-            failed: { status: 'error', text: 'Error' },
+            success: { status: 'success', text: 'Completado' },
+            processing: { status: 'processing', text: 'En proceso' },
+            error: { status: 'error', text: 'Error' },
             pending: { status: 'default', text: 'Pendiente' }
         };
         const config = statusConfig[status] || statusConfig.pending;
@@ -81,6 +104,11 @@ function ProcessView() {
     const filteredProcesses = state.listProcesses.filter(process => 
         process.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // Calcular los procesos a mostrar en la página actual
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentProcesses = filteredProcesses.slice(startIndex, endIndex);
 
     const handleCreateProcess = () => {
         form.validateFields().then(values => {
@@ -105,7 +133,6 @@ function ProcessView() {
             }).catch((error) => {
                 console.log("error", error);
             });
-            
         }).catch(info => {
             console.log('Validación fallida:', info);
         });
@@ -125,7 +152,7 @@ function ProcessView() {
     }
 
     const handleFlowChange = (flowId) => {
-        GetListFieldsResponses(flowId);
+        GetListFieldsResponsesByFlowID(flowId);
     };
 
     const handleOnCancelCreateProcess = () => {
@@ -135,9 +162,7 @@ function ProcessView() {
 
     const handleUploadChange = () => {
         ReadCSVFile().then((response) => {
-            console.log("response", response);
             form.setFieldValue("input", response);
-            
             setUploadedFileName(response.split('/').pop());
             setUploadedFile(true);
         }).catch((error) => {
@@ -149,10 +174,7 @@ function ProcessView() {
         setUploadedFileName("");
         setUploadedFile(null);
         form.resetFields();
-        setState((prevState) => ({
-            ...prevState,
-            listFieldsResponses: [],
-        }));
+        setFormFieldsResponse([]);
     }
 
     const handleOnClickRunProcess = (processId) => {
@@ -167,15 +189,57 @@ function ProcessView() {
         });
     }
 
+    const handleViewResults = (processId) => {
+        const process = state.listProcesses.find(p => p.id === processId);
+        console.log("process view results", process);
+    };
+
+    const handleOnClickDuplicateProcess = (processId) => {
+        console.log("process id duplicate", processId);
+        const process = state.listProcesses.find(p => p.id === processId);
+        const newProcess = {
+            name: process.name + " - copy",
+            flow_id: process.flow_id,
+            input: process.input,
+            fields_response_id: process.fields_response_id,
+            status: "pending",
+        };
+
+        form.setFieldsValue(newProcess); 
+
+        setUploadedFileName(process.input.split('/').pop());
+        setUploadedFile(true);
+        setIsModalVisible(true);
+    };
+
+    const showDeleteConfirm = (processId) => {
+        Modal.confirm({
+            content: '¿Estás seguro de que deseas eliminar este proceso?',
+            okText: 'Sí',
+            okType: 'danger',
+            cancelText: 'No',
+            onOk: () => handleDeleteProcess(processId),
+        });
+    };
+
+    const handleDeleteProcess = (processId) => {
+        console.log("Eliminando proceso con ID:", processId);
+        DeleteProcess(processId).then((response) => {
+            GetListProcesses();
+        }).catch((error) => {
+            console.log("error", error);
+        });
+    };
+
     return (
-        <Layout>
+        <Layout id='process-view'>
             <Content style={{ padding: '24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                     <Input 
                         placeholder="Buscar proceso..." 
                         value={searchTerm} 
                         onChange={(e) => setSearchTerm(e.target.value)} 
-                        style={{ width: '300px' }} 
+                        style={{ width: '85%' }} 
                     />
                     <Button 
                         type="primary" 
@@ -186,27 +250,47 @@ function ProcessView() {
                     </Button>
                 </div>
 
-                <Row gutter={[16, 16]}>
-                    {filteredProcesses.map(process => (
-                        <Col xs={24} sm={12} md={8} lg={6} key={process.id}>
-                            <Card
-                                title={process.name}
-                                extra={getStatusBadge(process.status)}
-                                actions={[
-                                    <Button type="text" icon={<PlayCircleOutlined />} key="run" onClick={() => handleOnClickRunProcess(process.id)}>Ejecutar</Button>,
-                                    <Button type="text" icon={<CopyOutlined />} key="duplicate">Duplicar</Button>
-                                ]}
-                            >
-                                <p><strong>Flow:</strong> {state.listFlows.find(flow => flow.id === process.flow_id)?.name}</p>
-                                <p><strong>Fields Response:</strong> {process.fields_response_id}</p>
-                                <p><strong>Input:</strong> {process.input.split('/').pop()}</p>
-                                {process.output_file && (
-                                    <p><strong>Output:</strong> {process.output_file}</p>
-                                )}
-                            </Card>
-                        </Col>
-                    ))}
-                </Row>
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: '660px', justifyContent: 'space-between' }}>
+                    <Row gutter={[16, 16]} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+                        {currentProcesses.map(process => (
+                            <Col xs={24} sm={12} md={8} lg={6} key={process.id}>
+                                <Card
+                                    title={process.name}
+                                    extra={getStatusBadge(process.status)}
+                                    actions={[
+                                        process.status === "success" || process.status === "error" ? (
+                                            <>
+                                                <Button type="text" key="view" onClick={() => handleViewResults(process.id)}>View Results</Button>
+                                                <Button type="text" icon={<CopyOutlined />} key="duplicate" onClick={() => handleOnClickDuplicateProcess(process.id)}>Duplicar</Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Button type="text" icon={<PlayCircleOutlined />} key="run" onClick={() => handleOnClickRunProcess(process.id)}>Ejecutar</Button>
+                                                {process.status === "pending" ? (
+                                                    <Button type="text" icon={<CloseOutlined />} key="remove" onClick={() => showDeleteConfirm(process.id)} style={{ color: 'red' }}>Remove</Button>
+                                                ) : (
+                                                    <Button type="text" icon={<CopyOutlined />} key="duplicate" onClick={() => handleOnClickDuplicateProcess(process.id)}>Duplicar</Button>
+                                                )}
+                                            </>
+                                        ),
+                                    ]}
+                                >
+                                    <p><strong>Flow:</strong> {state.listFlows.find(flow => flow.id === process.flow_id)?.name}</p>
+                                    <p><strong>Fields Response:</strong> {state.listFieldsResponses.find(fieldResponse => fieldResponse.id === process.fields_response_id)?.name}</p>
+                                    <p><strong>Input:</strong> {process.input.split('/').pop()}</p>
+                                </Card>
+                            </Col>
+                        ))}
+                    </Row>
+
+                    <Pagination
+                        current={currentPage}
+                        pageSize={pageSize}
+                        total={filteredProcesses.length}
+                        onChange={(page) => setCurrentPage(page)}
+                        style={{ marginTop: '20px', textAlign: 'center' }}
+                    />
+                </div>
 
                 <Modal
                     title="Crear Nuevo Proceso"
@@ -214,11 +298,19 @@ function ProcessView() {
                     onCancel={handleOnCancelCreateProcess}
                     footer={null}
                 >
-                    <Form layout="vertical" form={form}>
-                        <Form.Item label="Nombre del Proceso" name="name" required>
+                    <Form form={form} layout="vertical">
+                        <Form.Item
+                            label="Nombre del Proceso"
+                            name="name"
+                            rules={[{ required: true, message: 'Por favor ingrese el nombre del proceso' }]}
+                        >
                             <Input placeholder="Ingrese el nombre del proceso" />
                         </Form.Item>
-                        <Form.Item label="Flow" name="flow_id" required>
+                        <Form.Item 
+                            label="Flow" 
+                            name="flow_id" 
+                            rules={[{ required: true, message: 'Por favor seleccione un flow' }]}
+                        >
                             <Select 
                                 placeholder="Seleccione un flow" 
                                 showSearch
@@ -232,7 +324,11 @@ function ProcessView() {
                                 ))}
                             </Select>
                         </Form.Item>
-                        <Form.Item label="Fields Response" name="fields_response_id" required>
+                        <Form.Item 
+                            label="Fields Response" 
+                            name="fields_response_id" 
+                            rules={[{ required: true, message: 'Por favor seleccione un fields response' }]}
+                        >
                             <Select 
                                 placeholder="Seleccione fields response" 
                                 showSearch
@@ -240,12 +336,16 @@ function ProcessView() {
                                     option.children.toLowerCase().includes(input.toLowerCase()
                                 )}
                             >
-                                {state.listFieldsResponses.map(fieldResponse => (
+                                {formFieldsResponse.map(fieldResponse => (
                                     <Select.Option key={fieldResponse.id} value={fieldResponse.id}>{fieldResponse.name}</Select.Option>
                                 ))}
                             </Select>
                         </Form.Item>
-                        <Form.Item label="Archivo de entrada" name="input" required>
+                        <Form.Item 
+                            label="Archivo de entrada" 
+                            name="input" 
+                            rules={[{ required: true, message: 'Por favor seleccione un archivo de entrada' }]}
+                        >
                             {uploadedFile ? (
                                 <div>
                                     <span>{uploadedFileName}</span>
