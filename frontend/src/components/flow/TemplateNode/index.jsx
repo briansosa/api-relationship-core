@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { Handle, Position, NodeResizer } from 'reactflow';
 import { Card, Typography, Tag, Checkbox, Button, Divider, Modal, Form, InputNumber, Select } from 'antd';
 import { CaretRightOutlined, SettingOutlined } from '@ant-design/icons';
@@ -7,7 +7,7 @@ import './styles.css';
 const { Text } = Typography;
 
 // Componente para mostrar la estructura jerárquica del schema
-const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFieldSelected, templateName }) => {
+const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFieldSelected, templateName, isRootArray = false }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
   const getNodeType = (val) => {
@@ -29,23 +29,30 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
 
   const nodeType = getNodeType(value);
   const isExpandable = nodeType === 'object' || nodeType === 'array';
-  const children = nodeType === 'array' ? value[0] : value;
+  
+  let children;
+  if (nodeType === 'array') {
+    children = value[0];
+    if (name === "0") name = "";
+  } else {
+    children = value;
+  }
 
   // Construir el path completo para este nodo
-  const currentPath = fullPath ? `${fullPath}.${name}` : name;
-  
-  // Modificar cómo construimos el handleId
-  let handleId;
+  let currentPath;
   if (nodeType === 'array') {
-    // Para arrays, no agregamos el nombre del array al path del handle
-    handleId = fullPath;
-  } else if (fullPath.includes('#')) {
-    // Si ya estamos dentro de un array (el path contiene #)
-    handleId = currentPath;
+    currentPath = name ? (fullPath ? `${fullPath}.#` : '#') : fullPath;
   } else {
-    // Caso normal
-    handleId = currentPath;
+    // Si es un campo dentro de un array raíz, agregar el prefijo #
+    if (isRootArray && !fullPath.startsWith('#')) {
+      currentPath = name ? `#.${name}` : fullPath;
+    } else {
+      currentPath = name ? (fullPath ? `${fullPath}.${name}` : name) : fullPath;
+    }
   }
+
+  // El handleId será el mismo que currentPath
+  const handleId = currentPath;
 
   return (
     <div className="schema-node" style={{ marginLeft: level * 8 }}>
@@ -63,7 +70,7 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
               onClick={() => setIsExpanded(!isExpanded)}
             />
           )}
-          <Text>{name}</Text>
+          {name && <Text>{name}</Text>}
         </div>
 
         <div className="schema-header-right">
@@ -89,10 +96,11 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
               name={key}
               value={val}
               level={level + 1}
-              fullPath={nodeType === 'array' ? `${currentPath}.#` : currentPath}
+              fullPath={currentPath}
               onFieldSelect={onFieldSelect}
               isFieldSelected={isFieldSelected}
               templateName={templateName}
+              isRootArray={nodeType === 'array' || isRootArray}
             />
           ))}
         </div>
@@ -266,15 +274,28 @@ const TemplateNode = ({ data, selected, onFieldSelect, isFieldSelected }) => {
           <div className="response-panel">
             <Text strong>Respuesta</Text>
             <div className="response-list">
-              {schemaData && Object.entries(schemaData).map(([key, val]) => (
+              {schemaData && (Array.isArray(schemaData) ? (
                 <SchemaNode 
-                  key={key}
-                  name={key}
-                  value={val}
+                  key="root"
+                  name=""
+                  value={schemaData}
                   onFieldSelect={onFieldSelect}
                   isFieldSelected={isFieldSelected}
                   templateName={template.name}
+                  isRootArray={true}
                 />
+              ) : (
+                Object.entries(schemaData).map(([key, val]) => (
+                  <SchemaNode 
+                    key={key}
+                    name={key}
+                    value={val}
+                    onFieldSelect={onFieldSelect}
+                    isFieldSelected={isFieldSelected}
+                    templateName={template.name}
+                    isRootArray={false}
+                  />
+                ))
               ))}
             </div>
           </div>

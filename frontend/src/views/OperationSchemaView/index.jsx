@@ -90,8 +90,9 @@ const OperationSchemaView = () => {
   }
 
   const handleSaveSchema = () => {
+    console.log("state.entity.response", state.entity.response);
     const transformedJson = transformJsonValues(state.entity.response);
-    
+    console.log("transformedJson", transformedJson);
     // TODO: validate form
     const data = new operation.Operation({
       body: state.entity.body,
@@ -222,6 +223,7 @@ const OperationSchemaView = () => {
 
     TestRequest(data)
       .then((result) => {
+        console.log("result", result);
         setState((prevState) => {
           return {
             ...prevState,

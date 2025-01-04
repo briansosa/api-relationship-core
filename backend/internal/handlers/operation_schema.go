@@ -91,7 +91,7 @@ func (h *OperationSchemaHandler) GetAllSchemasWithTemplates() (*[]operation.Sche
 	return &result, nil
 }
 
-func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*map[string]interface{}, error) {
+func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*json.RawMessage, error) {
 	if operation.Timeout == nil || operation.Url == nil || operation.MethodType == nil {
 		return nil, fmt.Errorf("Error: Required fields are missing")
 	}
@@ -118,7 +118,9 @@ func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*ma
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	fmt.Println("response test api: ", string(response.Body))
+
+	var result json.RawMessage
 	err = json.Unmarshal(response.Body, &result)
 	if err != nil {
 		return nil, err

@@ -112,6 +112,11 @@ func (service *ProcessService) Process(process *process.Process) (*process.Proce
 				return memory, service.handleError(err, errorcustom.NewApiCallError, processObject.flow.Name)
 			}
 
+			fmt.Println("response", response)
+			fmt.Println("operationsFieldsResponse", operationsFieldsResponse)
+			fmt.Println("initialOperationSchema.Name", *initialOperationSchema.Name)
+			fmt.Println("memory", memory)
+
 			// Save response in memory
 			err = saveResponseInMemory(&memory, operationsFieldsResponse, *initialOperationSchema.Name, response)
 			if err != nil {

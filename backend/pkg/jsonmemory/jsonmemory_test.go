@@ -60,6 +60,20 @@ const jsonMultiplesListsResponse = `{
 	]
 }`
 
+const jsonBeginArraySingleResponse = `[
+	{
+		"name": "test",
+		"sub_locations": [
+			{
+				"sub_location_name": "sub_location_1"
+			},
+			{
+				"sub_location_name": "sub_location_2"
+			}
+		]
+	}
+]`
+
 func TestSingleResponse(t *testing.T) {
 	// Crear un mapa para almacenar los valores de memoria
 	memoryMap := memory.NewMemory()
@@ -86,6 +100,36 @@ func TestListResponse(t *testing.T) {
 
 	resultValues := result.GetValue()
 	assert.EqualValues(t, []interface{}{"test", "test_2"}, resultValues)
+}
+
+func TestSimpleBeginListResponse(t *testing.T) {
+	// Crear un mapa para almacenar los valores de memoria
+	memoryMap := memory.NewMemory()
+
+	err := SaveInMemory(&memoryMap, "teste", "#.name", jsonBeginArraySingleResponse)
+	require.Nil(t, err)
+
+	expectedKey := fmt.Sprintf("%s@%s", "teste", "#.name")
+	result, resultOk := memoryMap.Get(expectedKey)
+	assert.True(t, resultOk)
+
+	resultValues := result.GetValue()
+	assert.EqualValues(t, []interface{}{"test"}, resultValues)
+}
+
+func TestMultipleBeginListResponse(t *testing.T) {
+	// Crear un mapa para almacenar los valores de memoria
+	memoryMap := memory.NewMemory()
+
+	err := SaveInMemory(&memoryMap, "teste", "#.sub_locations.#.sub_location_name", jsonBeginArraySingleResponse)
+	require.Nil(t, err)
+
+	expectedKey := fmt.Sprintf("%s@%s", "teste", "#.sub_locations.#.sub_location_name")
+	result, resultOk := memoryMap.Get(expectedKey)
+	assert.True(t, resultOk)
+
+	resultValues := result.GetValue()
+	assert.EqualValues(t, []interface{}{"sub_location_1", "sub_location_2"}, resultValues)
 }
 
 func TestMultipleListsResponse(t *testing.T) {

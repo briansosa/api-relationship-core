@@ -38,11 +38,12 @@ Process View -> Ejecución del proceso
 Process View -> Mejoras visuales
 Process View -> Duplicar proceso
 Process View -> Delete process pendientes
+-> Hay respuestas json que arrancan como listas [] y no como objetos {}, en estos casos rompe el parseo del test endpoint. Ejemplo: https://jsonplaceholder.typicode.com/posts?userId=1
 
 ##Lo que estoy ahora
+    Process Result -> Hacer el analisis de UX y UI de como voy a mostrar los resultados
 
 ## Lo que falta
-Process Result -> Hacer el analisis de UX y UI de como voy a mostrar los resultados
 
 
 Bardometro:
@@ -51,10 +52,17 @@ Fields response:
     -> Reveer logica de actualizacion de campos en los nodos del flow ya que todo el tiempo se estan actualizando al marcar o desmarcar un check
     -> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
     -> Hoy en dia para cursar un flow los fields response conectores tienen que estar checkeados. Poner una validacion antes de ejecutar o forzarlo
+    -> Agregar import de headers en input mediante archivo csv
+
+Process View:
+    -> Agregar una opcion para que en vez de cargar un archivo csv, pueda abrirse una tabla con los headers y agregarle valores a manopla
 
 General:
-    -> Hay respuestas json que arrancan como listas [] y no como objetos {}, en estos casos rompe el parseo del test endpoint. Ejemplo: https://jsonplaceholder.typicode.com/posts?userId=1
-    -> Mejorar el manejo de errores y logs. Agregar tags
+    -> Fijarse como funciona la parte de List Execution Type y Maximum Concurrency cuando el json comienza como una lista
+    -> Mejorar el manejo de errores y logs. Agregar tags 
+    -> Poner carpeta de fields en el root del proyecto y no dentro de backend
+    -> Poner parametros en el body y probar flujos con post
+    -> Ver de nombrar bien los flujos (esta bien schemas template y flows?)
 
 
 Comando para ver la DB en web:

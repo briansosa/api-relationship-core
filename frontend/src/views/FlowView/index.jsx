@@ -334,6 +334,8 @@ const FlowView = () => {
 
   // Función auxiliar para construir el JSON path
   const buildJsonPath = (field, schema) => {
+    console.log("field", field);
+    console.log("schema", schema);
     if (!schema) return field;
 
     // Función recursiva para encontrar la ruta completa
@@ -374,12 +376,17 @@ const FlowView = () => {
       return;
     }
 
+    console.log('Input node data:', inputNode.data);
+    console.log('Input node fields:', inputNode.data.fields);
+
     // Encontrar el primer nodo template conectado al input
     const inputConnections = edges.filter(edge => edge.source === inputNode.id);
     if (inputConnections.length === 0) {
       console.error('El nodo input no tiene conexiones');
       return;
     }
+
+    console.log('Input connections:', inputConnections);
 
     // Obtener el nodo template conectado
     const firstTemplateNode = nodes.find(node => node.id === inputConnections[0].target);
@@ -390,9 +397,20 @@ const FlowView = () => {
 
     // Construir relation_fields basado en las conexiones del input
     const relationFields = inputConnections.map(connection => {
-      const parentField = connection.sourceHandle.replace('input-', '');
+      // En lugar de buscar por el sourceHandle, buscaremos la conexión correcta
+      // basándonos en el campo actual que tiene esa posición en el nodo input
+      const fieldIndex = inputNode.data.fields.findIndex((field, index) => 
+        `input-field_${index + 1}` === connection.sourceHandle
+      );
+
+      // Si encontramos el campo, usamos su nombre actual
+      const field = fieldIndex !== -1 ? inputNode.data.fields[fieldIndex] : null;
+      const parentField = field ? field.name : connection.sourceHandle.replace('input-', '');
       
-      // Extraer solo el último segmento del targetHandle
+      console.log('Field index:', fieldIndex);
+      console.log('Found field:', field);
+      console.log('Parent field:', parentField);
+
       const childParameter = connection.targetHandle.split('-').pop();
 
       return {
@@ -618,6 +636,7 @@ const FlowView = () => {
   }
 
   function LoadNodes(flow, availableSchemas) {
+    console.log("availableSchemas", availableSchemas);
     const nodes = [];
     const newEdges = [];
     const uid = new ShortUniqueId();

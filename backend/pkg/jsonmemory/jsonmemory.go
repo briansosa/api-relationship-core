@@ -130,10 +130,17 @@ func saveMultipleLists(memory *memory_pkg.Memory, operationName string, path, js
 
 	listCount := len(splitPath) - 1
 	indexPath := 0
-	resultPath := splitPath[indexPath]
+
+	// Si el path comienza con #, debemos usar el array raíz
+	var resultNodes gjson.Result
+	if splitPath[0] == "" {
+		resultNodes = gjson.Parse(json)
+	} else {
+		resultPath := splitPath[indexPath]
+		resultNodes = gjson.Get(json, resultPath)
+	}
 	indexPath++
 
-	resultNodes := gjson.Get(json, resultPath)
 	if !resultNodes.Exists() {
 		return errors.New("no existe valor")
 	}
