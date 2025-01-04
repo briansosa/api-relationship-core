@@ -125,6 +125,8 @@ const OperationSchemaView = () => {
       },
     }));
 
+
+    console.log("row", row);
     TestOperation(row);
   };
 

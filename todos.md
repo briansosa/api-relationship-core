@@ -29,12 +29,20 @@ Fields Response -> Ya tengo hecha la parte de crear uno cuando se crea un flow n
 Fields response -> Crear nuevo
 Fields response -> Editar nombre
 Fields response -> Borrar uno
+Fields response -> Mejorar lo visual en la sidebar
+Analizar pantalla de process y pensar ux y ui
+Process View -> Get all, vista general de cards
+Process View -> Filtro de cards
+Process View -> Modal de nuevo process
+Process View -> Ejecución del proceso
+Process View -> Mejoras visuales
+Process View -> Duplicar proceso
+Process View -> Delete process pendientes
 
 ##Lo que estoy ahora
-Fields response -> Mejorar lo visual en la sidebar
 
 ## Lo que falta
-Analizar pantalla de process y pensar ux y ui
+Process Result -> Hacer el analisis de UX y UI de como voy a mostrar los resultados
 
 
 Bardometro:
@@ -42,7 +50,11 @@ Fields response:
     -> Quitar que todo el tiempo haga location(url) esto hace que se muevan las cosas de lugar. Hacer solo cuando sea necesario
     -> Reveer logica de actualizacion de campos en los nodos del flow ya que todo el tiempo se estan actualizando al marcar o desmarcar un check
     -> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
+    -> Hoy en dia para cursar un flow los fields response conectores tienen que estar checkeados. Poner una validacion antes de ejecutar o forzarlo
 
+General:
+    -> Hay respuestas json que arrancan como listas [] y no como objetos {}, en estos casos rompe el parseo del test endpoint. Ejemplo: https://jsonplaceholder.typicode.com/posts?userId=1
+    -> Mejorar el manejo de errores y logs. Agregar tags
 
 
 Comando para ver la DB en web:

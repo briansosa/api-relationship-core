@@ -10,6 +10,7 @@
   "dependencies": {
     "json-edit-react": "^1.9.3",
     "react-json-pretty": "^2.2.0",
+    "react-resizable": "^3.0.5",
     "reactflow": "^11.11.4",
     "short-unique-id": "^5.2.0"
   }

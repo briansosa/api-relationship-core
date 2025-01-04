@@ -3,7 +3,8 @@ import {
   OperationSchemaView,
   OperationTemplateView,
   ProcessView,
-  FlowView
+  FlowView,
+  ProcessResultView
 } from '../views';
 
 import {
@@ -11,6 +12,7 @@ UserOutlined,
 LaptopOutlined,
 NotificationOutlined,
 ContainerOutlined,
+FileOutlined
 } from "@ant-design/icons";
 
 export const AppRoutes = [
@@ -49,6 +51,13 @@ export const AppRoutes = [
     component: ProcessView,
     title: "Process",
     icon: <ContainerOutlined/>,
+    children: [],
+  },
+  {
+    path: "/process_result",
+    component: ProcessResultView,
+    title: "Process Result",
+    icon: <FileOutlined/>,
     children: [],
   },
 ];

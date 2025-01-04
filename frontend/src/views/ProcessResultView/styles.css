@@ -1,0 +1,49 @@
+.react-resizable {
+    position: relative;
+    background-clip: padding-box;
+}
+
+.react-resizable-handle {
+    position: absolute;
+    right: -5px;
+    bottom: 0;
+    z-index: 99;
+    width: 10px;
+    height: 100%;
+    cursor: col-resize !important;
+    background-color: transparent;
+}
+
+.react-resizable-handle:hover {
+    background-color: rgba(230, 230, 230, 0.5);
+    opacity: 1;
+}
+
+.ant-table-thead > tr > th {
+    position: relative !important;
+    transition: background 0.2s;
+}
+
+.react-resizable-handle::after {
+    content: '';
+    position: absolute;
+    right: 4px;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background-color: #d9d9d9;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.react-resizable-handle:hover::after {
+    opacity: 1;
+}
+
+.ant-table-column-sorters {
+    padding-right: 15px;
+}
+
+.ant-table-thead > tr > th:hover .react-resizable-handle::after {
+    opacity: 1;
+} 
