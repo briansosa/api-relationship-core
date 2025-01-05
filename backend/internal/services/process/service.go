@@ -103,18 +103,24 @@ func (service *ProcessService) Process(process *process.Process) (*process.Proce
 			// Make initial operation
 			//
 
-			// Build Operation Process. Replace parameters and set value record.
-			buildInitialOperationProcess(&initialOperationProcess, processObject.flow.RelationFields, &initialOperationSchema, record, headers)
+			operationProcess := initialOperationProcess
 
+			fmt.Println("operationProcess before", operationProcess)
+			fmt.Println("processObject.flow.RelationFields", processObject.flow.RelationFields)
+			fmt.Println("initialOperationSchema", initialOperationSchema)
+			fmt.Println("record", record)
+			fmt.Println("headers", headers)
+			// Build Operation Process. Replace parameters and set value record.
+			buildInitialOperationProcess(&operationProcess, processObject.flow.RelationFields, &initialOperationSchema, record, headers)
+			fmt.Println("operationProcess after", operationProcess)
 			// Make first Api Call
-			response, err := service.MakeOperationHttpRequest(initialOperationProcess)
+			response, err := service.MakeOperationHttpRequest(operationProcess)
 			if err != nil {
 				return memory, service.handleError(err, errorcustom.NewApiCallError, processObject.flow.Name)
 			}
 
 			fmt.Println("response", response)
 			fmt.Println("operationsFieldsResponse", operationsFieldsResponse)
-			fmt.Println("initialOperationSchema.Name", *initialOperationSchema.Name)
 			fmt.Println("memory", memory)
 
 			// Save response in memory
@@ -596,7 +602,16 @@ func fillOperationWithValue(operation *operation.OperationProcess, param operati
 	case "header":
 		operation.Headers[param.Name] = value
 	case "path":
-		operation.Url = strings.Replace(operation.Url, "{"+param.Name+"}", value.(string), 1)
+		var stringValue string
+		switch v := value.(type) {
+		case string:
+			stringValue = v
+		case float64:
+			stringValue = fmt.Sprintf("%f", v) // Convertir float64 a string
+		default:
+			stringValue = fmt.Sprintf("%v", v) // Manejar otros tipos si es necesario
+		}
+		operation.Url = strings.Replace(operation.Url, "{"+param.Name+"}", stringValue, 1)
 	case "body":
 		// TODO hacer reemplazo de body
 	}

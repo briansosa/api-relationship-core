@@ -274,12 +274,26 @@ const FlowView = () => {
   };
 
   // Función auxiliar para procesar un nodo y sus conexiones
-  const processNodeConnections = (nodeId, allNodes, allEdges) => {
+  const processNodeConnections = (nodeId, allNodes, allEdges, processedNodes = new Set()) => {
+    console.log('Procesando nodo:', nodeId);
+    console.log('Nodos procesados:', Array.from(processedNodes));
+    
+    if (processedNodes.has(nodeId)) {
+      console.log('Nodo ya procesado, retornando null');
+      return null;
+    }
+    processedNodes.add(nodeId);
+
     const node = allNodes.find(n => n.id === nodeId);
-    if (!node) return null;
+    if (!node) {
+      console.log('Nodo no encontrado');
+      return null;
+    }
+    console.log('Nodo encontrado:', node);
 
     // Encontrar todas las conexiones salientes de este nodo
     const nodeConnections = allEdges.filter(edge => edge.source === nodeId);
+    console.log('Conexiones salientes encontradas:', nodeConnections);
     
     // Agrupar conexiones por nodo destino
     const connectionsByTarget = nodeConnections.reduce((acc, connection) => {
@@ -303,7 +317,7 @@ const FlowView = () => {
 
         // Construir el parent_field con el formato: [Nombre del template]@[json path]
         const sourceField = connection.sourceHandle.replace('resp-', '');
-        const parentField = `${node.data.template.name}@${buildJsonPath(sourceField, node.data.responseSchema)}`;
+        const parentField = `${node.data.template.name}@${sourceField}`;
 
         // Extraer solo el último segmento del targetHandle
         const childParameter = connection.targetHandle.split('-').pop();
@@ -316,7 +330,7 @@ const FlowView = () => {
       });
 
       // Procesar recursivamente las conexiones del nodo destino
-      const nestedOperations = processNodeConnections(targetId, allNodes, allEdges);
+      const nestedOperations = processNodeConnections(targetId, allNodes, allEdges, processedNodes);
 
       return {
         id: "",
@@ -325,7 +339,7 @@ const FlowView = () => {
         max_concurrency: targetNode.data.template.max_concurrency || 1,
         search_type: targetNode.data.template.search_type || "",
         relation_fields: relationFields,
-        relation_operations: nestedOperations || [] // Incluir las operaciones anidadas
+        relation_operations: nestedOperations || []
       };
     }).filter(Boolean);
 
@@ -395,6 +409,13 @@ const FlowView = () => {
       return;
     }
 
+    // Agregar estos logs antes de procesar las conexiones
+    console.log('Todos los nodos:', nodes);
+    console.log('Todas las conexiones:', edges);
+    
+    // Procesar las conexiones del primer nodo template
+    const relationOperations = processNodeConnections(firstTemplateNode.id, nodes, edges);
+
     // Construir relation_fields basado en las conexiones del input
     const relationFields = inputConnections.map(connection => {
       // En lugar de buscar por el sourceHandle, buscaremos la conexión correcta
@@ -419,9 +440,6 @@ const FlowView = () => {
         child_parameter: childParameter
       };
     });
-
-    // Procesar las conexiones del primer nodo template
-    const relationOperations = processNodeConnections(firstTemplateNode.id, nodes, edges);
 
     // Construir la entidad a guardar
     const flowEntity = {
@@ -636,18 +654,19 @@ const FlowView = () => {
   }
 
   function LoadNodes(flow, availableSchemas) {
-    console.log("availableSchemas", availableSchemas);
+    console.log("LoadNodes - Flow recibido:", flow);
+    console.log("LoadNodes - Schemas disponibles:", availableSchemas);
     const nodes = [];
     const newEdges = [];
     const uid = new ShortUniqueId();
 
     // Constantes para el espaciado
-    const HORIZONTAL_SPACING = 550; // Espacio horizontal entre nodos
-    const VERTICAL_SPACING = 250;   // Espacio vertical entre nodos del mismo nivel
-    const INITIAL_X = 100;          // Posición X inicial
-    const INITIAL_Y = 100;          // Posición Y inicial
+    const HORIZONTAL_SPACING = 550;
+    const VERTICAL_SPACING = 250;  
+    const INITIAL_X = 100;         
+    const INITIAL_Y = 100;         
 
-    // Agregar el nodo input con sus propiedades
+    // Log del nodo input
     const inputNode = {
       id: 'inputs',
       type: 'input',
@@ -665,12 +684,16 @@ const FlowView = () => {
       },
       draggable: true,
       deletable: false
-
     };
+    console.log("LoadNodes - Nodo input creado:", inputNode);
     nodes.push(inputNode);
 
-    const loadTemplateAndOperations = (templateId, level = 0, index = 0, relationFields = [], relationOperations = []) => {
-      // Usar los schemas pasados como parámetro en lugar del estado
+    const loadTemplateAndOperations = (templateId, level = 0, index = 0, relationFields = [], relationOperations = [], parentNode = null) => {
+      console.log("LoadTemplateAndOperations - Procesando templateId:", templateId);
+      console.log("LoadTemplateAndOperations - Nivel:", level);
+      console.log("LoadTemplateAndOperations - RelationFields:", relationFields);
+      console.log("LoadTemplateAndOperations - RelationOperations:", relationOperations);
+
       let selectedTemplate = null;
       let selectedSchema = null;
 
@@ -687,13 +710,13 @@ const FlowView = () => {
         return null;
       }
 
-      // Calcular la posición basada en el nivel y el índice
+      console.log("LoadTemplateAndOperations - Template encontrado:", selectedTemplate);
+
       const position = {
         x: INITIAL_X + (level + 1) * HORIZONTAL_SPACING,
         y: INITIAL_Y + index * VERTICAL_SPACING
       };
 
-      // Crear el nodo template con la nueva posición
       const templateNode = {
         id: `template-${uid.rnd()}`,
         type: 'template',
@@ -714,20 +737,22 @@ const FlowView = () => {
           maxWidth: 800
         }
       };
+      console.log("LoadTemplateAndOperations - Nodo template creado:", templateNode);
       nodes.push(templateNode);
 
-      // Crear las conexiones basadas en relation_fields
+      // Log de las conexiones que se van a crear
+      console.log("LoadTemplateAndOperations - Creando conexiones para relationFields:", relationFields);
       relationFields.forEach(relation => {
-        const sourceId = relation.type === 'input' ? 'inputs' : nodes[nodes.length - 2].id;
+        // Si hay un nodo padre específico, usarlo como fuente
+        const sourceId = relation.type === 'input' ? 'inputs' : 
+                        (parentNode ? parentNode.id : nodes[nodes.length - 2].id);
         
-        // Construir los IDs de los handles
         let sourceHandle, targetHandle;
         
         if (relation.type === 'input') {
           sourceHandle = `input-${relation.parent_field}`;
           targetHandle = `param-${relation.type}-${relation.child_parameter}`;
         } else {
-          // Para conexiones entre templates, extraer el último campo del path
           const fieldPath = relation.parent_field.split('@')[1];
           sourceHandle = `resp-${fieldPath}`;
           targetHandle = `param-${relation.type}-${relation.child_parameter}`;
@@ -741,18 +766,21 @@ const FlowView = () => {
           targetHandle,
         };
         
+        console.log("LoadTemplateAndOperations - Creando edge:", edge);
         newEdges.push(edge);
       });
 
-      // Procesar recursivamente las operaciones relacionadas
       if (relationOperations && relationOperations.length > 0) {
+        console.log("LoadTemplateAndOperations - Procesando operaciones anidadas:", relationOperations);
         relationOperations.forEach((operation, childIndex) => {
+          // Pasar el nodo actual como parentNode para las operaciones anidadas
           loadTemplateAndOperations(
             operation.operation_schema_id,
             level + 1,
             childIndex,
             operation.relation_fields,
-            operation.relation_operations
+            operation.relation_operations,
+            templateNode // Pasamos el nodo actual como padre
           );
         });
       }
@@ -760,8 +788,8 @@ const FlowView = () => {
       return templateNode;
     };
 
-    // Si hay un operation_schema_id, cargar el primer template y sus operaciones
     if (flow.operation_schema_id) {
+      console.log("LoadNodes - Iniciando carga del primer template:", flow.operation_schema_id);
       loadTemplateAndOperations(
         flow.operation_schema_id,
         0,
@@ -771,6 +799,9 @@ const FlowView = () => {
       );
     }
 
+    console.log("LoadNodes - Nodos finales:", nodes);
+    console.log("LoadNodes - Edges finales:", newEdges);
+    
     setNodes(nodes);
     edgesRef.current = newEdges;
   }

@@ -41,12 +41,19 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
   // Construir el path completo para este nodo
   let currentPath;
   if (nodeType === 'array') {
-    currentPath = name ? (fullPath ? `${fullPath}.#` : '#') : fullPath;
-  } else {
-    // Si es un campo dentro de un array raíz, agregar el prefijo #
-    if (isRootArray && !fullPath.startsWith('#')) {
-      currentPath = name ? `#.${name}` : fullPath;
+    if (name) {
+      // Si el array tiene un nombre (como 'results'), incluirlo en el path
+      currentPath = fullPath ? `${fullPath}.${name}.#` : `${name}.#`;
     } else {
+      // Si es un array raíz o anónimo
+      currentPath = fullPath ? `${fullPath}.#` : '#';
+    }
+  } else {
+    if (isRootArray) {
+      // Si es un campo dentro de un array
+      currentPath = name ? `${fullPath}.${name}` : fullPath;
+    } else {
+      // Para objetos normales y otros tipos
       currentPath = name ? (fullPath ? `${fullPath}.${name}` : name) : fullPath;
     }
   }

@@ -118,8 +118,6 @@ func (h *OperationSchemaHandler) TestRequest(operation operation.Operation) (*js
 		return nil, err
 	}
 
-	fmt.Println("response test api: ", string(response.Body))
-
 	var result json.RawMessage
 	err = json.Unmarshal(response.Body, &result)
 	if err != nil {
