@@ -1,115 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Radio, Modal, Space, Tooltip } from 'antd';
-import { ExpandOutlined } from '@ant-design/icons';
+import { Table, Button, Radio, Space, Tooltip, Input, Badge } from 'antd';
 import { Resizable } from 'react-resizable';
 import 'react-resizable/css/styles.css';
 import './styles.css';
-
-const jsonData = [
-    {
-        "calle": "aristobulo del valle 348, lanus",
-        "ubicacion@direccionesNormalizadas.#.coordenadas.x": [
-            -58.3963983979592
-        ],
-        "ubicacion@direccionesNormalizadas.#.coordenadas.y": [
-            -34.7048365326531
-        ],
-        "ubicacion@direccionesNormalizadas.#.direccion": [
-            "Aristóbulo del Valle 348, Lanús"
-        ],
-        "locacion@ubicacion.provincia.nombre": "Buenos Aires",
-        "locacion@ubicacion.departamento.nombre": "Lanús",
-        "locacion@ubicacion.municipio.nombre": "Lanús",
-        "sunrise sunset@results.sunrise": "5:47:48 AM",
-        "sunrise sunset@results.sunset": "8:11:40 PM",
-        "Open Water@current.sunrise": 1735980394,
-        "Open Water@current.temp": 294.21,
-        "Open Water@current.feels_like": 294.28,
-        "Open Water@current.pressure": 1012,
-        "Open Water@current.humidity": 73,
-        "Open Water@current.clouds": 20,
-        "Open Water@current.visibility": 10000,
-        "Open Water@current.wind_speed": 5.66,
-        "Open Water@current.weather.#.description": [
-            "few clouds"
-        ],
-        "Open Water@current.weather.#.main": [
-            "Clouds"
-        ],
-        "error": "false",
-        "error_message": null
-    },
-    {
-        "calle": "de la peña 912, lanus",
-        "ubicacion@direccionesNormalizadas.#.coordenadas.x": [
-            -58.3523998816327
-        ],
-        "ubicacion@direccionesNormalizadas.#.coordenadas.y": [
-            -34.7208329938776
-        ],
-        "ubicacion@direccionesNormalizadas.#.direccion": [
-            "Néstor De La Peña 912, Lanús"
-        ],
-        "locacion@ubicacion.provincia.nombre": "Buenos Aires",
-        "locacion@ubicacion.departamento.nombre": "Lanús",
-        "locacion@ubicacion.municipio.nombre": "Lanús",
-        "sunrise sunset@results.sunrise": "5:47:35 AM",
-        "sunrise sunset@results.sunset": "8:11:32 PM",
-        "Open Water@current.sunrise": 1735980381,
-        "Open Water@current.temp": 294.17,
-        "Open Water@current.feels_like": 294.23,
-        "Open Water@current.pressure": 1012,
-        "Open Water@current.humidity": 73,
-        "Open Water@current.clouds": 20,
-        "Open Water@current.visibility": 10000,
-        "Open Water@current.wind_speed": 5.66,
-        "Open Water@current.weather.#.description": [
-            "few clouds"
-        ],
-        "Open Water@current.weather.#.main": [
-            "Clouds"
-        ],
-        "error": "false",
-        "error_message": null
-    },
-    {
-        "calle": "rangugni 3056, lanus oeste",
-        "ubicacion@direccionesNormalizadas.#.coordenadas.x": [
-            -58.4002668183673
-        ],
-        "ubicacion@direccionesNormalizadas.#.coordenadas.y": [
-            -34.7078616591837
-        ],
-        "ubicacion@direccionesNormalizadas.#.direccion": [
-            "Teniente Jorge Rangugni 3056, Lanús"
-        ],
-        "locacion@ubicacion.provincia.nombre": "Buenos Aires",
-        "locacion@ubicacion.departamento.nombre": "Lanús",
-        "locacion@ubicacion.municipio.nombre": "Lanús",
-        "sunrise sunset@results.sunrise": "5:47:48 AM",
-        "sunrise sunset@results.sunset": "8:11:41 PM",
-        "Open Water@current.sunrise": 1735980394,
-        "Open Water@current.temp": 294.21,
-        "Open Water@current.feels_like": 294.28,
-        "Open Water@current.pressure": 1012,
-        "Open Water@current.humidity": 73,
-        "Open Water@current.clouds": 20,
-        "Open Water@current.visibility": 10000,
-        "Open Water@current.wind_speed": 5.66,
-        "Open Water@current.weather.#.description": [
-            "few clouds"
-        ],
-        "Open Water@current.weather.#.main": [
-            "Clouds", "otro"
-        ],
-        "error": "false",
-        "error_message": null
-    }
-];
+import { DownOutlined } from '@ant-design/icons';
+import { mockData } from './mockData';
 
 function ProcessResultView({ data }) {
-    const [listViewMode, setListViewMode] = useState('concatenated');
+    const jsonData = data || mockData; // Usar los datos proporcionados o los datos de ejemplo
+    const [listViewMode, setListViewMode] = useState('expandable');
     const [columns, setColumns] = useState([]);
+    const [separator, setSeparator] = useState('|');
+    const [expandedRows, setExpandedRows] = useState({});
 
     const isList = (value) => Array.isArray(value);
 
@@ -117,32 +19,74 @@ function ProcessResultView({ data }) {
         if (!isList(value)) return { [key]: value };
 
         switch (listViewMode) {
+            case 'expandable':
+                return { 
+                    [key]: {
+                        list: value,
+                        count: value.length,
+                        displayValue: value[0] || ''
+                    }
+                };
             case 'concatenated':
-                return { [key]: value.join(' | ') };
+                return { [key]: value.join(`${separator}`) };
             case 'columns':
-                return value.reduce((acc, item, index) => {
-                    acc[`${key}_${index + 1}`] = item;
-                    return acc;
-                }, {});
+                const maxElements = Math.max(
+                    ...jsonData
+                        .map(item => item[key])
+                        .filter(Array.isArray)
+                        .map(arr => arr.length)
+                );
+                
+                const result = {};
+                if (maxElements === 1) {
+                    result[key] = value[0] || '';
+                } else {
+                    for (let i = 0; i < maxElements; i++) {
+                        result[`${key}_${i + 1}`] = value[i] || '';
+                    }
+                }
+                return result;
             case 'rows':
                 return { [key]: value[0] };
             default:
-                return { [key]: value.join(' | ') };
+                return { [key]: value.join(`${separator}`) };
         }
     };
 
     const transformData = () => {
+        if (!Array.isArray(jsonData) || jsonData.length === 0) {
+            return [];
+        }
+
         if (listViewMode === 'rows') {
             return jsonData.flatMap(item => {
-                const rows = [{}];
+                const maxArrayLength = Math.max(
+                    ...Object.values(item)
+                        .filter(value => Array.isArray(value) && value.length > 1)
+                        .map(arr => arr.length),
+                    1
+                );
+
+                const rows = Array.from({ length: maxArrayLength }, () => ({}));
+
                 Object.entries(item).forEach(([key, value]) => {
                     if (isList(value)) {
-                        value.forEach((val, index) => {
-                            if (!rows[index]) rows[index] = {};
-                            rows[index][key] = val;
-                        });
+                        if (value.length > 1) {
+                            value.forEach((val, index) => {
+                                if (index < maxArrayLength) {
+                                    rows[index][key] = val;
+                                }
+                            });
+                        } else {
+                            rows[0][key] = value[0];
+                            for (let i = 1; i < maxArrayLength; i++) {
+                                rows[i][key] = '';
+                            }
+                        }
                     } else {
-                        rows.forEach(row => row[key] = value);
+                        rows.forEach(row => {
+                            row[key] = value;
+                        });
                     }
                 });
                 return rows;
@@ -152,7 +96,32 @@ function ProcessResultView({ data }) {
         return jsonData.map(item => {
             const transformedItem = {};
             Object.entries(item).forEach(([key, value]) => {
-                Object.assign(transformedItem, handleListValue(value, key));
+                if (listViewMode === 'expandable' && isList(value)) {
+                    transformedItem[key] = {
+                        list: value,
+                        count: value.length,
+                        displayValue: value[0] || ''
+                    };
+                } else if (listViewMode === 'columns' && isList(value)) {
+                    const maxElements = Math.max(
+                        ...jsonData
+                            .map(item => item[key])
+                            .filter(Array.isArray)
+                            .map(arr => arr.length)
+                    );
+
+                    if (maxElements === 1) {
+                        transformedItem[key] = value[0] || '';
+                    } else {
+                        for (let i = 0; i < maxElements; i++) {
+                            transformedItem[`${key}_${i + 1}`] = value[i] || '';
+                        }
+                    }
+                } else if (isList(value)) {
+                    transformedItem[key] = handleListValue(value, key)[key];
+                } else {
+                    transformedItem[key] = value;
+                }
             });
             return transformedItem;
         });
@@ -169,6 +138,14 @@ function ProcessResultView({ data }) {
         });
     };
 
+    const handleExpand = (recordKey, columnKey) => {
+        const key = `${recordKey}-${columnKey}`;
+        setExpandedRows(prev => ({
+            ...prev,
+            [key]: !prev[key]
+        }));
+    };
+
     const generateColumns = () => {
         const transformedData = transformData();
         if (!transformedData.length) return [];
@@ -179,41 +156,74 @@ function ProcessResultView({ data }) {
             key: key,
             width: 200,
             ellipsis: {
-                showTitle: false // Deshabilita el tooltip por defecto
+                showTitle: false
             },
             onHeaderCell: column => ({
                 width: column.width,
                 onResize: handleResize(key),
             }),
             render: (value, record) => {
-                const originalValue = jsonData.find(item => item[key])?.[key];
-                if (isList(originalValue)) {
+                if (value === null || value === undefined) {
+                    return <span></span>;
+                }
+
+                if (listViewMode === 'expandable' && typeof value === 'object' && value?.list) {
+                    const rowKey = `${record.key || record.id || JSON.stringify(record)}-${key}`;
+                    const isExpanded = expandedRows[rowKey];
+                    
                     return (
-                        <Space>
-                            <Tooltip title={value}>
-                                <span style={{ width: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {value}
-                                </span>
-                            </Tooltip>
-                            <Button 
-                                icon={<ExpandOutlined />} 
-                                size="small"
-                                onClick={() => showDetails(key, originalValue)}
-                            />
-                        </Space>
+                        <div 
+                            className="expandable-cell"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleExpand(record.key || record.id || JSON.stringify(record), key);
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                {value.count > 1 && (
+                                    <DownOutlined 
+                                        rotate={isExpanded ? 180 : 0}
+                                        style={{ fontSize: '12px', marginRight: 8 }}
+                                    />
+                                )}
+                                {(value.count == 0 || !isExpanded) && ( <span>{value.list[0]}</span> )}
+                                {value.count > 1 && !isExpanded && (
+                                    <Badge 
+                                        count={`+${value.count - 1}`} 
+                                        size="small"
+                                        style={{ backgroundColor: '#1890ff', marginLeft: 8 }}
+                                    />
+                                )}
+                                {value.count > 1 && isExpanded && (
+                                    <div className="expandable-content expanded">
+                                        {value.list.map((item, index) => (
+                                            <div key={`${rowKey}-${index}`} className="expandable-item">
+                                                {item ?? ''}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     );
                 }
+                
                 return (
-                    <Tooltip title={value}>
-                        <span>{value}</span>
+                    <Tooltip title={value?.toString() || ''}>
+                        <span>
+                            {typeof value === 'object' && value?.list ? value.list[0] : value?.toString() || ''}
+                        </span>
                     </Tooltip>
                 );
             },
             sorter: (a, b) => {
-                if (typeof a[key] === 'string') {
-                    return a[key].localeCompare(b[key]);
+                const valA = a[key]?.displayValue ?? a[key] ?? '';
+                const valB = b[key]?.displayValue ?? b[key] ?? '';
+                
+                if (typeof valA === 'string') {
+                    return valA.localeCompare(valB);
                 }
-                return a[key] - b[key];
+                return (valA || 0) - (valB || 0);
             },
         }));
 
@@ -221,23 +231,21 @@ function ProcessResultView({ data }) {
         return newColumns;
     };
 
-    useEffect(() => {
-        generateColumns();
-    }, [listViewMode]);
-
-    const showDetails = (title, values) => {
-        Modal.info({
-            title: `Detalles de ${title}`,
-            content: (
-                <div>
-                    {values.map((value, index) => (
-                        <p key={index}>{value}</p>
-                    ))}
-                </div>
-            ),
-            width: 600,
-        });
+    const getTableData = () => {
+        const data = transformData();
+        return data.map((item, index) => ({
+            ...item,
+            key: `row-${index}`
+        }));
     };
+
+    useEffect(() => {
+        if (!Array.isArray(jsonData)) {
+            console.error('ProcessResultView: data prop must be an array');
+            return;
+        }
+        generateColumns();
+    }, [listViewMode, separator, expandedRows, jsonData]);
 
     const components = {
         header: {
@@ -253,16 +261,28 @@ function ProcessResultView({ data }) {
                         value={listViewMode} 
                         onChange={(e) => setListViewMode(e.target.value)}
                     >
+                        <Radio.Button value="expandable">Expandible</Radio.Button>
                         <Radio.Button value="concatenated">Concatenado</Radio.Button>
                         <Radio.Button value="columns">Columnas Separadas</Radio.Button>
                         <Radio.Button value="rows">Filas Separadas</Radio.Button>
                     </Radio.Group>
+                    
+                    {listViewMode === 'concatenated' && (
+                        <Input
+                            placeholder="Separador"
+                            value={separator}
+                            onChange={(e) => setSeparator(e.target.value)}
+                            style={{ width: 100 }}
+                            maxLength={5}
+                        />
+                    )}
+                    
                     <Button type="primary">Exportar</Button>
                 </Space>
 
                 <Table 
                     components={components}
-                    dataSource={transformData()} 
+                    dataSource={getTableData()} 
                     columns={columns}
                     scroll={{ x: 'max-content' }}
                     pagination={{
