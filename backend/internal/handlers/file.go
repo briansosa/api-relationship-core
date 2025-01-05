@@ -2,10 +2,15 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/api-relationship-core/backend/internal/domain/models/file"
 	"github.com/api-relationship-core/backend/internal/domain/ports"
+	"github.com/api-relationship-core/backend/pkg/files"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -35,7 +40,20 @@ func (handler *FileHandler) ParseToCsv(filename *string) (*file.FileOutput, erro
 
 }
 
-func (h *FileHandler) ReadCSVFile(filePath string) (string, error) {
+func (h *FileHandler) ReadFile(filePath string) (string, error) {
+	outputPath := files.GetSchemaPath("output")
+	filename := fmt.Sprintf("%s.json", filePath)
+	outputPath = filepath.Join(outputPath, filename)
+	data, err := os.ReadFile(outputPath)
+	if err != nil {
+		return "", err
+	}
+
+	result := base64.StdEncoding.EncodeToString(data)
+	return result, nil
+}
+
+func (h *FileHandler) GetFilePath() (string, error) {
 	result, err := runtime.OpenFileDialog(*h.Context, runtime.OpenDialogOptions{})
 	if err != nil {
 		return "", err

@@ -7,12 +7,13 @@ import { PlusOutlined, PlayCircleOutlined, CopyOutlined, UploadOutlined, CloseOu
 import { GetAllProcesses, CreateProcess, StartProcess, DeleteProcess } from "../../../wailsjs/go/handlers/ProcessHandler";
 import { GetAllFlows } from "../../../wailsjs/go/handlers/FlowHandler";
 import { GetFieldsResponseByFlowID, GetAllFieldsResponses } from "../../../wailsjs/go/handlers/FieldsResponseHandler";
-import { ReadCSVFile } from "../../../wailsjs/go/handlers/FileHandler";
-
+import { GetFilePath } from "../../../wailsjs/go/handlers/FileHandler";
+import { useNavigate } from "react-router-dom";
 
 const { Content } = Layout;
 
 function ProcessView() {
+    const navigate = useNavigate();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [form] = Form.useForm();
@@ -161,7 +162,8 @@ function ProcessView() {
     }
 
     const handleUploadChange = () => {
-        ReadCSVFile().then((response) => {
+        GetFilePath().then((response) => {
+            console.log("response read csv file", response);
             form.setFieldValue("input", response);
             setUploadedFileName(response.split('/').pop());
             setUploadedFile(true);
@@ -190,8 +192,7 @@ function ProcessView() {
     }
 
     const handleViewResults = (processId) => {
-        const process = state.listProcesses.find(p => p.id === processId);
-        console.log("process view results", process);
+        navigate(`/process_result/${processId}`);
     };
 
     const handleOnClickDuplicateProcess = (processId) => {

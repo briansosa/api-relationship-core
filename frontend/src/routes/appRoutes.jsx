@@ -54,7 +54,7 @@ export const AppRoutes = [
     children: [],
   },
   {
-    path: "/process_result",
+    path: ["/process_result", "/process_result/:id"],
     component: ProcessResultView,
     title: "Process Result",
     icon: <FileOutlined/>,

@@ -2,3 +2,6 @@ build/bin
 node_modules
 frontend/dist
 .vscode
+backend/files/output
+backend/files/input
+backend/files/.DS_Store
