@@ -52,7 +52,7 @@ const FlowView = () => {
     updateTemplateFields, 
     toggleField, 
     isFieldSelected, 
-    convertToFieldResponse 
+    getFieldsResponse
   } = useTemplateFields();
 
   const { setFieldResponseSelected } = useFlowContext();
@@ -256,7 +256,7 @@ const FlowView = () => {
       relation_fields: relationFields,
       relation_operations: relationOperations || [],
       fields_response_id: state.entity.fields_response_id,
-      fields_response: convertToFieldResponse(templateFields, state.fieldResponseSelected)
+      fields_response: getFieldsResponse(state.fieldResponseSelected)
     };
 
     console.log('Entidad a guardar:', flowEntity);
@@ -304,9 +304,8 @@ const FlowView = () => {
   const handleFieldsResponseSelect = (fieldResponseId) => {
     const fieldResponseEntity = state.fieldsResponses.find(fr => fr.id === fieldResponseId);
     
-    // Actualizar templateFields con los nuevos datos
-    setTemplateFields(convertToTemplateFields(fieldResponseEntity));
-    
+    // Actualizar ambos estados de forma consistente
+    setFieldResponseSelected(fieldResponseEntity);
     setState(prevState => ({
       ...prevState,
       fieldResponseSelected: fieldResponseEntity
@@ -428,11 +427,11 @@ const FlowView = () => {
       // Inicializar templateFields y fieldResponseSelected
       if (fieldsResponseResult.length > 0) {
         const initialFieldResponse = fieldsResponseResult[0];
-        console.log('Inicializando con:', initialFieldResponse);
         
-        await updateTemplateFields(initialFieldResponse);
+        // Actualizar el contexto
         setFieldResponseSelected(initialFieldResponse);
-
+        
+        // Actualizar el estado local
         setState(prevState => ({
           ...prevState,
           entity: flowResult,
@@ -776,22 +775,6 @@ const FlowView = () => {
     template: TemplateNodeComponent,
     input: InputNodeComponent
   }), [TemplateNodeComponent, InputNodeComponent]);
-
-
-  // Funciones de conversión
-  const convertToTemplateFields = (fieldResponse) => {
-    if (!fieldResponse) return new Map();
-    
-    return fieldResponse.fields_response.reduce((map, field) => {
-      const templateKey = `${field.operation_name}-${fieldResponse.id}`;
-      const currentFields = map.get(templateKey) || [];
-      if (!currentFields.includes(field.field_response)) {
-        map.set(templateKey, [...currentFields, field.field_response]);
-      }
-      return map;
-    }, new Map());
-  };
-
 
 
   return (

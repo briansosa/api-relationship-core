@@ -65,12 +65,18 @@ export function TemplateFieldsProvider({ children }) {
     return fields.includes(fieldPath);
   }, [templateFields]);
 
+  const getFieldsResponse = useCallback((fieldResponseSelected) => {
+    if (!fieldResponseSelected) return [];
+    return convertToFieldResponse(templateFields, fieldResponseSelected);
+  }, [templateFields, convertToFieldResponse]);
+
   const value = {
     templateFields,
     updateTemplateFields,
     toggleField,
     isFieldSelected,
-    convertToFieldResponse
+    convertToFieldResponse,
+    getFieldsResponse
   };
 
   return (
