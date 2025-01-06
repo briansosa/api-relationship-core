@@ -15,7 +15,9 @@ import { GetAllFlows, InsertFlow, GetFlow, DeleteFlow, UpdateFlow } from '../../
 import { InsertFieldsResponse, GetFieldsResponseByFlowID, UpdateFieldsResponse, DeleteFieldsResponse } from '../../../wailsjs/go/handlers/FieldsResponseHandler';
 
 
-const FlowView = () => {  
+const FlowView = () => {
+  
+  // Constants
   const entityInit = {
     id: "0",
     name: "",
@@ -68,79 +70,12 @@ const FlowView = () => {
     }
   }, [nodes]);
 
-   // Manejador para cuando se selecciona un checkbox en TemplateNode
-   const handleFieldSelect = useCallback((templateName, fieldPath, isChecked) => {
-     if (!state.fieldResponseSelected) return;
 
-    let newFields = [];
-    if (isChecked) {
-      newFields = [
-        ...state.fieldResponseSelected.fields_response, // Cambié 'fieldsResponses' a 'fieldResponseSelected'
-        {
-          operation_name: templateName,
-          field_response: fieldPath
-        }
-      ];
-    } else {
-      newFields = state.fieldResponseSelected.fields_response.filter(f => 
-        !(f.operation_name === templateName && f.field_response === fieldPath)
-      );
-    }
+  //
+  // Handlers
+  //
 
-    setState(prevState => ({
-      ...prevState,
-      fieldResponseSelected: {
-        ...prevState.fieldResponseSelected,
-        fields_response: newFields
-      }
-    }));
-
-
-  }, [state.fieldResponseSelected]);
-
-  // Función para verificar si un campo está seleccionado
-  const isFieldSelected = useCallback((templateName, fieldPath) => {
-    if (!state.fieldResponseSelected) return false;
-
-    const isSelected = state.fieldResponseSelected.fields_response.some(f => 
-      f.operation_name === templateName && f.field_response === fieldPath
-    );
-
-    return isSelected;
-  }, [state.fieldResponseSelected]);
-
-  // Memoizamos nodeTypes después de definir las funciones necesarias
-  const nodeTypes = useMemo(() => ({
-    template: props => (
-      <TemplateNode
-        {...props}
-        onFieldSelect={handleFieldSelect}
-        isFieldSelected={isFieldSelected}
-      />
-    ),
-    input: (props) => (
-      <InputNode
-        {...props}
-        updateNodeData={(newData) => {
-          setNodes((nds) =>
-            nds.map((node) => {
-              if (node.id === props.id) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    ...newData,
-                  },
-                };
-              }
-              return node;
-            })
-          );
-        }}
-      />
-    ),
-  }), [handleFieldSelect, isFieldSelected, setNodes]);
-
+  // Templates
 
   const handleTemplateSelect = (templateId) => {
     // templateId viene como un array con un único elemento
@@ -178,7 +113,7 @@ const FlowView = () => {
           search_type: selectedTemplate.search_type || 'simple'
         },
         responseSchema: selectedSchema?.schema || [],
-        onConnect
+        onConnectHandler
       },
       draggable: true,
       style: {
@@ -191,15 +126,8 @@ const FlowView = () => {
     setNodes(prev => [...prev, newNode]);
   };
 
-  // Handlers
 
-  // Manejador para eliminar nodos
-  const handleNodesDelete = useCallback((nodesToDelete) => {
-    setNodes(nodes => nodes.filter(node => 
-      !nodesToDelete.find(n => n.id === node.id)
-    ));
-  }, [setNodes]);
-
+  // Flows
 
   const handleAddFlow = () => {
     const randomId = new ShortUniqueId().rnd();
@@ -215,13 +143,6 @@ const FlowView = () => {
 
     InsertOperationFlow(entity);
   };
-
-  // Manejador de conexiones
-  const onConnect = useCallback((params) => {
-    // params contiene sourceHandle, targetHandle, source (nodeId), target (nodeId)
-    setEdges((eds) => addEdge(params, eds));
-  }, [setEdges]);
-
 
   const handleFlowSelect = (flowId) => {
     setState(prevState => ({
@@ -265,123 +186,6 @@ const FlowView = () => {
     UpdateOperationFlow(flowEntity);
   };
 
-  const handleFieldsResponseSelect = (fieldResponseId) => {
-    const fieldResponseEntity = state.fieldsResponses.find(fr => fr.id === fieldResponseId);
-    setState(prevState => ({
-      ...prevState,
-      fieldResponseSelected: fieldResponseEntity
-    }));
-  };
-
-  // Función auxiliar para procesar un nodo y sus conexiones
-  const processNodeConnections = (nodeId, allNodes, allEdges, processedNodes = new Set()) => {
-    console.log('Procesando nodo:', nodeId);
-    console.log('Nodos procesados:', Array.from(processedNodes));
-    
-    if (processedNodes.has(nodeId)) {
-      console.log('Nodo ya procesado, retornando null');
-      return null;
-    }
-    processedNodes.add(nodeId);
-
-    const node = allNodes.find(n => n.id === nodeId);
-    if (!node) {
-      console.log('Nodo no encontrado');
-      return null;
-    }
-    console.log('Nodo encontrado:', node);
-
-    // Encontrar todas las conexiones salientes de este nodo
-    const nodeConnections = allEdges.filter(edge => edge.source === nodeId);
-    console.log('Conexiones salientes encontradas:', nodeConnections);
-    
-    // Agrupar conexiones por nodo destino
-    const connectionsByTarget = nodeConnections.reduce((acc, connection) => {
-      const targetId = connection.target;
-      if (!acc[targetId]) {
-        acc[targetId] = [];
-      }
-      acc[targetId].push(connection);
-      return acc;
-    }, {});
-
-    // Procesar cada nodo destino y sus conexiones
-    const relationOperations = Object.entries(connectionsByTarget).map(([targetId, connections]) => {
-      const targetNode = allNodes.find(n => n.id === targetId);
-      if (!targetNode) return null;
-
-      // Construir relation_fields para todas las conexiones a este nodo
-      const relationFields = connections.map(connection => {
-        const paramMatch = connection.targetHandle.match(/param-(.*?)-/);
-        const paramType = paramMatch ? paramMatch[1] : '';
-
-        // Construir el parent_field con el formato: [Nombre del template]@[json path]
-        const sourceField = connection.sourceHandle.replace('resp-', '');
-        const parentField = `${node.data.template.name}@${sourceField}`;
-
-        // Extraer solo el último segmento del targetHandle
-        const childParameter = connection.targetHandle.split('-').pop();
-
-        return {
-          type: paramType,
-          parent_field: parentField,
-          child_parameter: childParameter
-        };
-      });
-
-      // Procesar recursivamente las conexiones del nodo destino
-      const nestedOperations = processNodeConnections(targetId, allNodes, allEdges, processedNodes);
-
-      return {
-        id: "",
-        operation_schema_id: targetNode.data.template.id,
-        name: targetNode.data.template.name,
-        max_concurrency: targetNode.data.template.max_concurrency || 1,
-        search_type: targetNode.data.template.search_type || "",
-        relation_fields: relationFields,
-        relation_operations: nestedOperations || []
-      };
-    }).filter(Boolean);
-
-    return relationOperations;
-  };
-
-  // Función auxiliar para construir el JSON path
-  const buildJsonPath = (field, schema) => {
-    console.log("field", field);
-    console.log("schema", schema);
-    if (!schema) return field;
-
-    // Función recursiva para encontrar la ruta completa
-    const findPath = (currentSchema, targetField, currentPath = '') => {
-      if (!currentSchema || typeof currentSchema !== 'object') return null;
-
-      // Buscar en las propiedades del objeto
-      for (const [key, value] of Object.entries(currentSchema)) {
-        // Si encontramos el campo objetivo
-        if (key === targetField) {
-          return currentPath ? `${currentPath}.${key}` : key;
-        }
-
-        // Si es un array, incluimos el nombre de la propiedad y el #
-        if (Array.isArray(value)) {
-          const result = findPath(value[0], targetField, currentPath ? `${currentPath}.${key}.#` : `${key}.#`);
-          if (result) return result;
-        }
-        // Si es un objeto, seguimos buscando
-        else if (typeof value === 'object') {
-          const result = findPath(value, targetField, currentPath ? `${currentPath}.${key}` : key);
-          if (result) return result;
-        }
-      }
-
-      return null;
-    };
-
-    const path = findPath(schema, field);
-    return path || field;
-  };
-
   const handleSaveFlow = () => {
     // Encontrar el nodo input
     const inputNode = nodes.find(node => node.type === 'input');
@@ -390,9 +194,6 @@ const FlowView = () => {
       return;
     }
 
-    console.log('Input node data:', inputNode.data);
-    console.log('Input node fields:', inputNode.data.fields);
-
     // Encontrar el primer nodo template conectado al input
     const inputConnections = edges.filter(edge => edge.source === inputNode.id);
     if (inputConnections.length === 0) {
@@ -400,18 +201,12 @@ const FlowView = () => {
       return;
     }
 
-    console.log('Input connections:', inputConnections);
-
     // Obtener el nodo template conectado
     const firstTemplateNode = nodes.find(node => node.id === inputConnections[0].target);
     if (!firstTemplateNode) {
       console.error('No se encontró el nodo template conectado');
       return;
     }
-
-    // Agregar estos logs antes de procesar las conexiones
-    console.log('Todos los nodos:', nodes);
-    console.log('Todas las conexiones:', edges);
     
     // Procesar las conexiones del primer nodo template
     const relationOperations = processNodeConnections(firstTemplateNode.id, nodes, edges);
@@ -428,10 +223,6 @@ const FlowView = () => {
       const field = fieldIndex !== -1 ? inputNode.data.fields[fieldIndex] : null;
       const parentField = field ? field.name : connection.sourceHandle.replace('input-', '');
       
-      console.log('Field index:', fieldIndex);
-      console.log('Found field:', field);
-      console.log('Parent field:', parentField);
-
       const childParameter = connection.targetHandle.split('-').pop();
 
       return {
@@ -464,6 +255,9 @@ const FlowView = () => {
     
   };
 
+
+  // Fields Response
+  
   const handleAddFieldResponse = (data) => {
     const uid = new ShortUniqueId();
     const fieldsResponse = {
@@ -472,10 +266,10 @@ const FlowView = () => {
       flow_id: state.entity.id,
       fields_response: []
     }
-
+    
     InsertOperationFieldsResponse(fieldsResponse);
   };
-
+  
   const handleDeleteFieldResponse = (fieldResponseId) => {
     if (state.fieldsResponses.length == 1) {
       console.log('No se puede eliminar, es el único elemento en la lista.');
@@ -484,16 +278,72 @@ const FlowView = () => {
     
     DeleteOperationFieldsResponse(fieldResponseId);
   };
-
+  
   const handleRenameFieldResponse = (newName) => {
     const fieldResponseEntity = state.fieldResponseSelected;
     fieldResponseEntity.name = newName;
-
+    
     UpdateFieldsResponse(fieldResponseEntity);
   };
+  
+  const handleFieldsResponseSelect = (fieldResponseId) => {
+    const fieldResponseEntity = state.fieldsResponses.find(fr => fr.id === fieldResponseId);
+    setState(prevState => ({
+      ...prevState,
+      fieldResponseSelected: fieldResponseEntity
+    }));
+  };
 
-  // Functions
+  const handleFieldSelect = useCallback((templateName, fieldPath, isChecked) => {
+    if (!state.fieldResponseSelected) return;
 
+    let newFields = [];
+    if (isChecked) {
+      newFields = [
+        ...state.fieldResponseSelected.fields_response, // Cambié 'fieldsResponses' a 'fieldResponseSelected'
+        {
+          operation_name: templateName,
+          field_response: fieldPath
+        }
+      ];
+    } else {
+      newFields = state.fieldResponseSelected.fields_response.filter(f => 
+        !(f.operation_name === templateName && f.field_response === fieldPath)
+      );
+    }
+
+    setState(prevState => ({
+      ...prevState,
+      fieldResponseSelected: {
+        ...prevState.fieldResponseSelected,
+        fields_response: newFields
+      }
+    }));
+
+
+  }, [state.fieldResponseSelected]);
+
+
+  // Nodes and Edges
+
+  const handleNodesDelete = useCallback((nodesToDelete) => {
+    setNodes(nodes => nodes.filter(node => 
+      !nodesToDelete.find(n => n.id === node.id)
+    ));
+  }, [setNodes]);
+  
+  const onConnectHandler = useCallback((params) => {
+    // params contiene sourceHandle, targetHandle, source (nodeId), target (nodeId)
+    setEdges((eds) => addEdge(params, eds));
+  }, [setEdges]);
+
+
+  //
+  // ApiCalls
+  //
+
+  // Flows
+  
   function GetAllOperationsFlow() {
     GetAllFlows()
       .then((result) => {
@@ -505,58 +355,6 @@ const FlowView = () => {
       .catch((error) => {
         console.error('Error loading flows:', error);
       });
-  }
-
-  function InsertOperationFieldsResponse(fieldsResponse) {
-    return InsertFieldsResponse(fieldsResponse).then((result) => {
-      setState(prevState => ({
-        ...prevState,
-        fieldsResponses: [...prevState.fieldsResponses, result],
-        fieldResponseSelected: result,
-        entity: {
-          ...prevState.entity,
-          fields_response_id: [...prevState.entity.fields_response_id, result.id]
-        },
-        flows: prevState.flows.map(flow => {
-          if (flow.id === state.entity.id) {
-            return {
-              ...flow,
-              fields_response_id: [...flow.fields_response_id, result.id]
-            }
-          }
-          return flow;
-        })
-
-      }));
-    }).catch((error) => {
-      console.error('Error inserting fields response:', error);
-    });
-  }
-
-  function DeleteOperationFieldsResponse(fieldsResponseId) {
-    DeleteFieldsResponse(fieldsResponseId).then((result) => {
-      const url = `/flow/${state.entity.id}/edit`;
-      navigate(url);
-    }).catch((error) => {
-      console.error('Error deleting fields response:', error);
-    });
-  }
-
-  function UpdateOperationFieldsResponse(fieldResponse) {
-    UpdateFieldsResponse(fieldResponse).then((result) => {
-      setState(prevState => ({
-        ...prevState,
-        fieldsResponses: prevState.fieldsResponses.map(fr => {
-          if (fr.id === fieldResponse.id) {
-            return fieldResponse;
-          }
-          return fr;
-        }),
-        fieldResponseSelected: result
-      }));
-    }).catch((error) => {
-      console.error('Error updating fields response:', error);
-    })  ;
   }
 
   function InsertOperationFlow(flow) {  
@@ -653,9 +451,141 @@ const FlowView = () => {
       });
   }
 
+  // Fields Response
+  function InsertOperationFieldsResponse(fieldsResponse) {
+    return InsertFieldsResponse(fieldsResponse).then((result) => {
+      setState(prevState => ({
+        ...prevState,
+        fieldsResponses: [...prevState.fieldsResponses, result],
+        fieldResponseSelected: result,
+        entity: {
+          ...prevState.entity,
+          fields_response_id: [...prevState.entity.fields_response_id, result.id]
+        },
+        flows: prevState.flows.map(flow => {
+          if (flow.id === state.entity.id) {
+            return {
+              ...flow,
+              fields_response_id: [...flow.fields_response_id, result.id]
+            }
+          }
+          return flow;
+        })
+
+      }));
+    }).catch((error) => {
+      console.error('Error inserting fields response:', error);
+    });
+  }
+
+  function DeleteOperationFieldsResponse(fieldsResponseId) {
+    DeleteFieldsResponse(fieldsResponseId).then((result) => {
+      const url = `/flow/${state.entity.id}/edit`;
+      navigate(url);
+    }).catch((error) => {
+      console.error('Error deleting fields response:', error);
+    });
+  }
+
+  function UpdateOperationFieldsResponse(fieldResponse) {
+    UpdateFieldsResponse(fieldResponse).then((result) => {
+      setState(prevState => ({
+        ...prevState,
+        fieldsResponses: prevState.fieldsResponses.map(fr => {
+          if (fr.id === fieldResponse.id) {
+            return fieldResponse;
+          }
+          return fr;
+        }),
+        fieldResponseSelected: result
+      }));
+    }).catch((error) => {
+      console.error('Error updating fields response:', error);
+    })  ;
+  }
+
+
+  //
+  // Functions
+
+  const isFieldSelected = useCallback((templateName, fieldPath) => {
+    if (!state.fieldResponseSelected) return false;
+
+    const isSelected = state.fieldResponseSelected.fields_response.some(f => 
+      f.operation_name === templateName && f.field_response === fieldPath
+    );
+
+    return isSelected;
+  }, [state.fieldResponseSelected]);
+
+  const processNodeConnections = (nodeId, allNodes, allEdges, processedNodes = new Set()) => {
+    if (processedNodes.has(nodeId)) {
+      console.log('Nodo ya procesado, retornando null');
+      return null;
+    }
+    processedNodes.add(nodeId);
+
+    const node = allNodes.find(n => n.id === nodeId);
+    if (!node) {
+      console.log('Nodo no encontrado');
+      return null;
+    }
+
+    // Encontrar todas las conexiones salientes de este nodo
+    const nodeConnections = allEdges.filter(edge => edge.source === nodeId);
+    
+    // Agrupar conexiones por nodo destino
+    const connectionsByTarget = nodeConnections.reduce((acc, connection) => {
+      const targetId = connection.target;
+      if (!acc[targetId]) {
+        acc[targetId] = [];
+      }
+      acc[targetId].push(connection);
+      return acc;
+    }, {});
+
+    // Procesar cada nodo destino y sus conexiones
+    const relationOperations = Object.entries(connectionsByTarget).map(([targetId, connections]) => {
+      const targetNode = allNodes.find(n => n.id === targetId);
+      if (!targetNode) return null;
+
+      // Construir relation_fields para todas las conexiones a este nodo
+      const relationFields = connections.map(connection => {
+        const paramMatch = connection.targetHandle.match(/param-(.*?)-/);
+        const paramType = paramMatch ? paramMatch[1] : '';
+
+        // Construir el parent_field con el formato: [Nombre del template]@[json path]
+        const sourceField = connection.sourceHandle.replace('resp-', '');
+        const parentField = `${node.data.template.name}@${sourceField}`;
+
+        // Extraer solo el último segmento del targetHandle
+        const childParameter = connection.targetHandle.split('-').pop();
+
+        return {
+          type: paramType,
+          parent_field: parentField,
+          child_parameter: childParameter
+        };
+      });
+
+      // Procesar recursivamente las conexiones del nodo destino
+      const nestedOperations = processNodeConnections(targetId, allNodes, allEdges, processedNodes);
+
+      return {
+        id: "",
+        operation_schema_id: targetNode.data.template.id,
+        name: targetNode.data.template.name,
+        max_concurrency: targetNode.data.template.max_concurrency || 1,
+        search_type: targetNode.data.template.search_type || "",
+        relation_fields: relationFields,
+        relation_operations: nestedOperations || []
+      };
+    }).filter(Boolean);
+
+    return relationOperations;
+  };
+
   function LoadNodes(flow, availableSchemas) {
-    console.log("LoadNodes - Flow recibido:", flow);
-    console.log("LoadNodes - Schemas disponibles:", availableSchemas);
     const nodes = [];
     const newEdges = [];
     const uid = new ShortUniqueId();
@@ -685,16 +615,11 @@ const FlowView = () => {
       draggable: true,
       deletable: false
     };
-    console.log("LoadNodes - Nodo input creado:", inputNode);
+    
     nodes.push(inputNode);
 
     const loadTemplateAndOperations = (templateId, level = 0, index = 0, relationFields = [], relationOperations = [], parentNode = null) => {
-      console.log("LoadTemplateAndOperations - Procesando templateId:", templateId);
-      console.log("LoadTemplateAndOperations - Nivel:", level);
-      console.log("LoadTemplateAndOperations - RelationFields:", relationFields);
-      console.log("LoadTemplateAndOperations - RelationOperations:", relationOperations);
-
-      let selectedTemplate = null;
+       let selectedTemplate = null;
       let selectedSchema = null;
 
       availableSchemas.forEach(schema => {
@@ -709,8 +634,6 @@ const FlowView = () => {
         console.warn('No se encontró el template:', templateId);
         return null;
       }
-
-      console.log("LoadTemplateAndOperations - Template encontrado:", selectedTemplate);
 
       const position = {
         x: INITIAL_X + (level + 1) * HORIZONTAL_SPACING,
@@ -728,7 +651,7 @@ const FlowView = () => {
             search_type: selectedTemplate.search_type || 'simple'
           },
           responseSchema: selectedSchema?.schema || [],
-          onConnect
+          onConnectHandler
         },
         draggable: true,
         style: {
@@ -737,11 +660,9 @@ const FlowView = () => {
           maxWidth: 800
         }
       };
-      console.log("LoadTemplateAndOperations - Nodo template creado:", templateNode);
+      
       nodes.push(templateNode);
 
-      // Log de las conexiones que se van a crear
-      console.log("LoadTemplateAndOperations - Creando conexiones para relationFields:", relationFields);
       relationFields.forEach(relation => {
         // Si hay un nodo padre específico, usarlo como fuente
         const sourceId = relation.type === 'input' ? 'inputs' : 
@@ -766,12 +687,10 @@ const FlowView = () => {
           targetHandle,
         };
         
-        console.log("LoadTemplateAndOperations - Creando edge:", edge);
         newEdges.push(edge);
       });
 
       if (relationOperations && relationOperations.length > 0) {
-        console.log("LoadTemplateAndOperations - Procesando operaciones anidadas:", relationOperations);
         relationOperations.forEach((operation, childIndex) => {
           // Pasar el nodo actual como parentNode para las operaciones anidadas
           loadTemplateAndOperations(
@@ -789,7 +708,6 @@ const FlowView = () => {
     };
 
     if (flow.operation_schema_id) {
-      console.log("LoadNodes - Iniciando carga del primer template:", flow.operation_schema_id);
       loadTemplateAndOperations(
         flow.operation_schema_id,
         0,
@@ -798,13 +716,45 @@ const FlowView = () => {
         flow.relation_operations
       );
     }
-
-    console.log("LoadNodes - Nodos finales:", nodes);
-    console.log("LoadNodes - Edges finales:", newEdges);
     
     setNodes(nodes);
     edgesRef.current = newEdges;
   }
+
+
+  // Memories
+  
+  const nodeTypes = useMemo(() => ({
+    template: props => (
+      <TemplateNode
+        {...props}
+        onFieldSelect={handleFieldSelect}
+        isFieldSelected={isFieldSelected}
+      />
+    ),
+    input: (props) => (
+      <InputNode
+        {...props}
+        updateNodeData={(newData) => {
+          setNodes((nds) =>
+            nds.map((node) => {
+              if (node.id === props.id) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    ...newData,
+                  },
+                };
+              }
+              return node;
+            })
+          );
+        }}
+      />
+    ),
+  }), [handleFieldSelect, isFieldSelected, setNodes]);
+
 
   return (
     <Layout style={{ height: '100vh' }}>
@@ -835,7 +785,7 @@ const FlowView = () => {
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
+            onConnect={onConnectHandler}
             onNodesDelete={handleNodesDelete}
             nodesDraggable={true}
             panOnDrag={true}
