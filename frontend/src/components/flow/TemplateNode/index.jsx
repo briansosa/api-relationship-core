@@ -3,11 +3,13 @@ import { Handle, Position, NodeResizer } from 'reactflow';
 import { Card, Typography, Tag, Checkbox, Button, Divider, Modal, Form, InputNumber, Select } from 'antd';
 import { CaretRightOutlined, SettingOutlined } from '@ant-design/icons';
 import './styles.css';
+import TemplateFieldsManager from '../TemplateFieldsManager';
+import { useFlowContext } from '../../../context/FlowContext';
 
 const { Text } = Typography;
 
 // Componente para mostrar la estructura jerárquica del schema
-const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFieldSelected, templateName, isRootArray = false }) => {
+const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRootArray = false, managerOnFieldSelect, fields }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
   const getNodeType = (val) => {
@@ -67,8 +69,10 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
         <div className="schema-header-left">
           {!isExpandable && (
             <Checkbox
-              checked={isFieldSelected(templateName, handleId)}
-              onChange={(e) => onFieldSelect(templateName, handleId, e.target.checked)}
+              checked={fields.includes(handleId)}
+              onChange={(e) => {
+                managerOnFieldSelect?.(handleId, e.target.checked);
+              }}
             />
           )}
           {isExpandable && (
@@ -104,10 +108,10 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
               value={val}
               level={level + 1}
               fullPath={currentPath}
-              onFieldSelect={onFieldSelect}
-              isFieldSelected={isFieldSelected}
               templateName={templateName}
               isRootArray={nodeType === 'array' || isRootArray}
+              managerOnFieldSelect={managerOnFieldSelect}
+              fields={fields}
             />
           ))}
         </div>
@@ -117,8 +121,9 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', onFieldSelect, isFi
 };
 
 // Componente TemplateNode principal
-const TemplateNode = ({ data, selected, onFieldSelect, isFieldSelected }) => {
+const TemplateNode = ({ data, selected }) => {
   const { template, responseSchema } = data;
+  const { fieldResponseSelected } = useFlowContext();
   const [schemaData, setSchemaData] = useState(null);
   const [isConfigModalVisible, setIsConfigModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -222,135 +227,142 @@ const TemplateNode = ({ data, selected, onFieldSelect, isFieldSelected }) => {
   }, [template]);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <NodeResizer 
-        minWidth={300}
-        maxWidth={800}
-        minHeight={100}
-        isVisible={selected}
-        handleStyle={{ background: '#1890ff' }}
-      />
-      <Card 
-        className="template-node"
-        title={
-          <div className="template-node-header">
-            <Tag color={getMethodColor(template.method_type)}>
-              {template.method_type}
-            </Tag>
-            <Text strong style={{ flex: 1, textAlign: 'center' }}>
-              {template.name}
-            </Text>
-            <Button
-              type="text"
-              icon={<SettingOutlined />}
-              onClick={() => setIsConfigModalVisible(true)}
-              className="config-button"
-            />
-          </div>
-        }
-        size="small"
-      >
-        <div className="template-node-content">
-          {/* Panel Izquierdo - Parámetros */}
-          <div className="parameters-panel">
-            <Text strong>Parámetros</Text>
-            <div className="parameters-list">
-              {template.params?.map((param, index) => (
-                <div 
-                  key={`${param.type}-${param.name}-${index}`} 
-                  className="parameter-item"
-                >
-                  <Handle
-                    type="target"
-                    position={Position.Left}
-                    id={`param-${param.type}-${param.name}`}
-                    className="connection-handle"
-                  />
-                  <Tag color={getParamTypeColor(param.type)}>
-                    {param.type === 'query_param' ? 'query' : param.type}
-                  </Tag>
-                  <Text>{param.name}</Text>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Divider type="vertical" className="panel-divider" />
-
-          {/* Panel Derecho - Respuesta */}
-          <div className="response-panel">
-            <Text strong>Respuesta</Text>
-            <div className="response-list">
-              {schemaData && (Array.isArray(schemaData) ? (
-                <SchemaNode 
-                  key="root"
-                  name=""
-                  value={schemaData}
-                  onFieldSelect={onFieldSelect}
-                  isFieldSelected={isFieldSelected}
-                  templateName={template.name}
-                  isRootArray={true}
+    <TemplateFieldsManager 
+      templateName={template.name}
+      fieldResponseId={fieldResponseSelected?.id}
+    >
+      {({ fields, onFieldSelect: managerOnFieldSelect }) => (
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <NodeResizer 
+            minWidth={300}
+            maxWidth={800}
+            minHeight={100}
+            isVisible={selected}
+            handleStyle={{ background: '#1890ff' }}
+          />
+          <Card 
+            className="template-node"
+            title={
+              <div className="template-node-header">
+                <Tag color={getMethodColor(template.method_type)}>
+                  {template.method_type}
+                </Tag>
+                <Text strong style={{ flex: 1, textAlign: 'center' }}>
+                  {template.name}
+                </Text>
+                <Button
+                  type="text"
+                  icon={<SettingOutlined />}
+                  onClick={() => setIsConfigModalVisible(true)}
+                  className="config-button"
                 />
-              ) : (
-                Object.entries(schemaData).map(([key, val]) => (
-                  <SchemaNode 
-                    key={key}
-                    name={key}
-                    value={val}
-                    onFieldSelect={onFieldSelect}
-                    isFieldSelected={isFieldSelected}
-                    templateName={template.name}
-                    isRootArray={false}
-                  />
-                ))
-              ))}
+              </div>
+            }
+            size="small"
+          >
+            <div className="template-node-content">
+              {/* Panel Izquierdo - Parámetros */}
+              <div className="parameters-panel">
+                <Text strong>Parámetros</Text>
+                <div className="parameters-list">
+                  {template.params?.map((param, index) => (
+                    <div 
+                      key={`${param.type}-${param.name}-${index}`} 
+                      className="parameter-item"
+                    >
+                      <Handle
+                        type="target"
+                        position={Position.Left}
+                        id={`param-${param.type}-${param.name}`}
+                        className="connection-handle"
+                      />
+                      <Tag color={getParamTypeColor(param.type)}>
+                        {param.type === 'query_param' ? 'query' : param.type}
+                      </Tag>
+                      <Text>{param.name}</Text>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Divider type="vertical" className="panel-divider" />
+
+              {/* Panel Derecho - Respuesta */}
+              <div className="response-panel">
+                <Text strong>Respuesta</Text>
+                <div className="response-list">
+                  {schemaData && (Array.isArray(schemaData) ? (
+                    <SchemaNode 
+                      key="root"
+                      name=""
+                      value={schemaData}
+                      templateName={template.name}
+                      isRootArray={true}
+                      managerOnFieldSelect={managerOnFieldSelect}
+                      fields={fields}
+                    />
+                  ) : (
+                    Object.entries(schemaData).map(([key, val]) => (
+                      <SchemaNode 
+                        key={key}
+                        name={key}
+                        value={val}
+                        templateName={template.name}
+                        isRootArray={false}
+                        managerOnFieldSelect={managerOnFieldSelect}
+                        fields={fields}
+                      />
+                    ))
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          </Card>
+
+          <Modal
+            title="Template Configuration"
+            open={isConfigModalVisible}
+            onOk={handleConfigSave}
+            onCancel={() => setIsConfigModalVisible(false)}
+            destroyOnClose
+          >
+            <Form
+              form={form}
+              layout="vertical"
+              initialValues={{
+                maxConcurrency: template.max_concurrency || 1,
+                executionType: template.search_type?.toUpperCase() || 'SIMPLE'
+              }}
+            >
+              <Form.Item
+                name="maxConcurrency"
+                label="Maximum Concurrency"
+                rules={[
+                  { required: true, message: 'Please input maximum concurrency!' },
+                  { type: 'number', min: 1, message: 'Must be at least 1!' }
+                ]}
+              >
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                name="executionType"
+                label="List Execution Type"
+                rules={[{ required: true, message: 'Please select execution type!' }]}
+              >
+                <Select>
+                  {Object.entries(EXECUTION_TYPES).map(([key, value]) => (
+                    <Select.Option key={key} value={key}>
+                      {value}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Form>
+          </Modal>
         </div>
-      </Card>
-
-      <Modal
-        title="Template Configuration"
-        open={isConfigModalVisible}
-        onOk={handleConfigSave}
-        onCancel={() => setIsConfigModalVisible(false)}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            maxConcurrency: template.max_concurrency || 1,
-            executionType: template.search_type?.toUpperCase() || 'SIMPLE'
-          }}
-        >
-          <Form.Item
-            name="maxConcurrency"
-            label="Maximum Concurrency"
-            rules={[
-              { required: true, message: 'Please input maximum concurrency!' },
-              { type: 'number', min: 1, message: 'Must be at least 1!' }
-            ]}
-          >
-            <InputNumber min={1} style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item
-            name="executionType"
-            label="List Execution Type"
-            rules={[{ required: true, message: 'Please select execution type!' }]}
-          >
-            <Select>
-              {Object.entries(EXECUTION_TYPES).map(([key, value]) => (
-                <Select.Option key={key} value={key}>
-                  {value}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+      )}
+    </TemplateFieldsManager>
   );
 };
 

@@ -13,6 +13,8 @@ import FlowToolbar from '../../components/flow/FlowToolbar';
 import { GetAllSchemasWithTemplates } from '../../../wailsjs/go/handlers/OperationSchemaHandler';
 import { GetAllFlows, InsertFlow, GetFlow, DeleteFlow, UpdateFlow } from '../../../wailsjs/go/handlers/FlowHandler';
 import { InsertFieldsResponse, GetFieldsResponseByFlowID, UpdateFieldsResponse, DeleteFieldsResponse } from '../../../wailsjs/go/handlers/FieldsResponseHandler';
+import { useTemplateFields } from '../../context/TemplateFieldsContext';
+import { useFlowContext } from '../../context/FlowContext';
 
 
 const FlowView = () => {
@@ -45,13 +47,24 @@ const FlowView = () => {
     fieldResponseSelected: null
   });
 
+  const { 
+    templateFields,
+    updateTemplateFields, 
+    toggleField, 
+    isFieldSelected, 
+    convertToFieldResponse 
+  } = useTemplateFields();
+
+  const { setFieldResponseSelected } = useFlowContext();
 
   useEffect(() => {    
     if (!urlParams.id && !urlParams.mode) {
+      console.log('ejecutando primera entrada');
       GetAllOperationsFlow();
     }
 
     if (urlParams.id !== "0" && urlParams.mode === "edit") {
+      console.log('ejecutando segunda entrada');
       setState((prevState) => ({
         ...prevState,
         id: urlParams.id,
@@ -65,15 +78,16 @@ const FlowView = () => {
 
   useEffect(() => {
     if (nodes.length > 0 && edgesRef.current.length > 0) {
+      console.log('renderizando nodos y edges');
       setEdges(edgesRef.current);
       edgesRef.current = [];
     }
   }, [nodes]);
 
-
   //
   // Handlers
   //
+
 
   // Templates
 
@@ -241,7 +255,8 @@ const FlowView = () => {
       search_type: firstTemplateNode.data.template.search_type || "",
       relation_fields: relationFields,
       relation_operations: relationOperations || [],
-      fields_response_id: state.entity.fields_response_id
+      fields_response_id: state.entity.fields_response_id,
+      fields_response: convertToFieldResponse(templateFields, state.fieldResponseSelected)
     };
 
     console.log('Entidad a guardar:', flowEntity);
@@ -288,40 +303,22 @@ const FlowView = () => {
   
   const handleFieldsResponseSelect = (fieldResponseId) => {
     const fieldResponseEntity = state.fieldsResponses.find(fr => fr.id === fieldResponseId);
+    
+    // Actualizar templateFields con los nuevos datos
+    setTemplateFields(convertToTemplateFields(fieldResponseEntity));
+    
     setState(prevState => ({
       ...prevState,
       fieldResponseSelected: fieldResponseEntity
     }));
   };
 
-  const handleFieldSelect = useCallback((templateName, fieldPath, isChecked) => {
-    if (!state.fieldResponseSelected) return;
-
-    let newFields = [];
-    if (isChecked) {
-      newFields = [
-        ...state.fieldResponseSelected.fields_response, // Cambié 'fieldsResponses' a 'fieldResponseSelected'
-        {
-          operation_name: templateName,
-          field_response: fieldPath
-        }
-      ];
-    } else {
-      newFields = state.fieldResponseSelected.fields_response.filter(f => 
-        !(f.operation_name === templateName && f.field_response === fieldPath)
-      );
+  // Actualizar cuando cambia fieldResponseSelected
+  useEffect(() => {
+    if (state.fieldResponseSelected) {
+      updateTemplateFields(state.fieldResponseSelected);
     }
-
-    setState(prevState => ({
-      ...prevState,
-      fieldResponseSelected: {
-        ...prevState.fieldResponseSelected,
-        fields_response: newFields
-      }
-    }));
-
-
-  }, [state.fieldResponseSelected]);
+  }, [state.fieldResponseSelected, updateTemplateFields]);
 
 
   // Nodes and Edges
@@ -338,6 +335,23 @@ const FlowView = () => {
   }, [setEdges]);
 
 
+  const handleInputNodeUpdate = useCallback((nodeId, newData) => {
+    setNodes(nodes => 
+      nodes.map(node => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              ...newData,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, []);
+
   //
   // ApiCalls
   //
@@ -347,6 +361,7 @@ const FlowView = () => {
   function GetAllOperationsFlow() {
     GetAllFlows()
       .then((result) => {
+        console.log('flows primera entrada', result);
         setState(prevState => ({
           ...prevState,
           flows: result
@@ -401,38 +416,35 @@ const FlowView = () => {
       });
   }
 
-  function GetOperationFlow(id) {
-    GetFlow(id)
-      .then(flowResult => {
+  async function GetOperationFlow(id) {
+    try {
+      const flowResult = await GetFlow(id);
+      const schemasResult = await GetAllSchemasWithTemplates();
+      setSchemas(schemasResult);
+      LoadNodes(flowResult, schemasResult);
+      GetAllOperationsFlow();
+      const fieldsResponseResult = await GetFieldsResponseByFlowID(flowResult.id);
+      
+      // Inicializar templateFields y fieldResponseSelected
+      if (fieldsResponseResult.length > 0) {
+        const initialFieldResponse = fieldsResponseResult[0];
+        console.log('Inicializando con:', initialFieldResponse);
+        
+        await updateTemplateFields(initialFieldResponse);
+        setFieldResponseSelected(initialFieldResponse);
+
         setState(prevState => ({
           ...prevState,
           entity: flowResult,
           disable: false,
-          empty: false
+          empty: false,
+          fieldsResponses: fieldsResponseResult,
+          fieldResponseSelected: initialFieldResponse
         }));
-
-        GetAllSchemasWithTemplates().then((schemasResult) => {
-          setSchemas(schemasResult);
-          LoadNodes(flowResult, schemasResult);
-        });
-
-        GetAllOperationsFlow();
-
-        GetFieldsResponseByFlowID(flowResult.id)
-          .then((fieldsResponseResult) => {
-            setState(prevState => ({
-              ...prevState,
-              fieldsResponses: fieldsResponseResult,
-              fieldResponseSelected: fieldsResponseResult.length > 0 ? fieldsResponseResult[0] : prevState.fieldResponseSelected
-            }));
-          })
-          .catch((error) => {
-            console.error('Error getting fields response by flow id:', error);
-          });
-      })
-      .catch((error) => {
-        console.error('Error en GetOperationFlow:', error);
-      });
+      }
+    } catch (error) {
+      console.error('Error en GetOperationFlow:', error);
+    }
   }
   
   function UpdateOperationFlow(flow) {
@@ -508,16 +520,6 @@ const FlowView = () => {
   //
   // Functions
 
-  const isFieldSelected = useCallback((templateName, fieldPath) => {
-    if (!state.fieldResponseSelected) return false;
-
-    const isSelected = state.fieldResponseSelected.fields_response.some(f => 
-      f.operation_name === templateName && f.field_response === fieldPath
-    );
-
-    return isSelected;
-  }, [state.fieldResponseSelected]);
-
   const processNodeConnections = (nodeId, allNodes, allEdges, processedNodes = new Set()) => {
     if (processedNodes.has(nodeId)) {
       console.log('Nodo ya procesado, retornando null');
@@ -585,22 +587,75 @@ const FlowView = () => {
     return relationOperations;
   };
 
-  function LoadNodes(flow, availableSchemas) {
-    const nodes = [];
-    const newEdges = [];
-    const uid = new ShortUniqueId();
+  // Constantes para el espaciado
+  const LAYOUT_CONFIG = {
+    HORIZONTAL_SPACING: 550,
+    VERTICAL_SPACING: 250,
+    INITIAL_X: 100,
+    INITIAL_Y: 100
+  };
 
-    // Constantes para el espaciado
-    const HORIZONTAL_SPACING = 550;
-    const VERTICAL_SPACING = 250;  
-    const INITIAL_X = 100;         
-    const INITIAL_Y = 100;         
+  // TODO: Ver si se puede optimizar este, aunque no creo que sea lo mas tarde ahora
+  function findTemplateAndSchema(templateId, availableSchemas) {
+    const selectedSchema = availableSchemas.find(schema => 
+      schema.list_templates?.some(t => t.id === templateId)
+    );
 
-    // Log del nodo input
-    const inputNode = {
+    const selectedTemplate = selectedSchema?.list_templates?.find(t => 
+      t.id === templateId
+    );
+
+    return { selectedTemplate, selectedSchema };
+  }
+
+  const createTemplateNode = useCallback((template, schema, position, uid, onConnectHandler) => {
+    return {
+      id: `template-${uid.rnd()}`,
+      type: 'template',
+      position,
+      data: { 
+        template: {
+          ...template,
+          max_concurrency: template.max_concurrency || 1,
+          search_type: template.search_type || 'simple'
+        },
+        responseSchema: schema?.schema || [],
+        onConnectHandler
+      },
+      draggable: true,
+      style: {
+        width: 400,
+        minWidth: 300,
+        maxWidth: 800
+      }
+    };
+  }, []);
+
+  function createEdges(relationFields, sourceNode, targetNode, uid) {
+    return relationFields.map(relation => {
+      const sourceId = relation.type === 'input' ? 'inputs' : sourceNode.id;
+      
+      const sourceHandle = relation.type === 'input' 
+        ? `input-${relation.parent_field}`
+        : `resp-${relation.parent_field.split('@')[1]}`;
+
+      const targetHandle = `param-${relation.type}-${relation.child_parameter}`;
+
+      return {
+        id: `edge-${uid.rnd()}`,
+        source: sourceId,
+        target: targetNode.id,
+        sourceHandle,
+        targetHandle,
+      };
+    });
+  };
+
+  function createInputNode(flow, layoutConfig) {
+    return {
       id: 'inputs',
       type: 'input',
-      position: { x: INITIAL_X + 200, y: INITIAL_Y },
+      position: { x: layoutConfig.INITIAL_X + 200, y: layoutConfig.INITIAL_Y },
       data: {
         fields: flow.relation_fields.map(relation => ({
           name: relation.parent_field,
@@ -615,145 +670,128 @@ const FlowView = () => {
       draggable: true,
       deletable: false
     };
-    
-    nodes.push(inputNode);
+  };
 
-    const loadTemplateAndOperations = (templateId, level = 0, index = 0, relationFields = [], relationOperations = [], parentNode = null) => {
-       let selectedTemplate = null;
-      let selectedSchema = null;
+  function loadTemplateAndOperations({
+    templateId,
+    level = 0,
+    index = 0,
+    relationFields = [],
+    relationOperations = [],
+    parentNode = null,
+    nodes,
+    newEdges,
+    uid,
+    availableSchemas,
+    onConnectHandler
+  }) {
+    const { selectedTemplate, selectedSchema } = findTemplateAndSchema(templateId, availableSchemas);
 
-      availableSchemas.forEach(schema => {
-        const template = schema.list_templates?.find(t => t.id === templateId);
-        if (template) {
-          selectedTemplate = template;
-          selectedSchema = schema;
-        }
-      });
+    if (!selectedTemplate) {
+      console.warn('No se encontró el template:', templateId);
+      return null;
+    }
 
-      if (!selectedTemplate) {
-        console.warn('No se encontró el template:', templateId);
-        return null;
-      }
-
-      const position = {
-        x: INITIAL_X + (level + 1) * HORIZONTAL_SPACING,
-        y: INITIAL_Y + index * VERTICAL_SPACING
-      };
-
-      const templateNode = {
-        id: `template-${uid.rnd()}`,
-        type: 'template',
-        position,
-        data: { 
-          template: {
-            ...selectedTemplate,
-            max_concurrency: selectedTemplate.max_concurrency || 1,
-            search_type: selectedTemplate.search_type || 'simple'
-          },
-          responseSchema: selectedSchema?.schema || [],
-          onConnectHandler
-        },
-        draggable: true,
-        style: {
-          width: 400,
-          minWidth: 300,
-          maxWidth: 800
-        }
-      };
-      
-      nodes.push(templateNode);
-
-      relationFields.forEach(relation => {
-        // Si hay un nodo padre específico, usarlo como fuente
-        const sourceId = relation.type === 'input' ? 'inputs' : 
-                        (parentNode ? parentNode.id : nodes[nodes.length - 2].id);
-        
-        let sourceHandle, targetHandle;
-        
-        if (relation.type === 'input') {
-          sourceHandle = `input-${relation.parent_field}`;
-          targetHandle = `param-${relation.type}-${relation.child_parameter}`;
-        } else {
-          const fieldPath = relation.parent_field.split('@')[1];
-          sourceHandle = `resp-${fieldPath}`;
-          targetHandle = `param-${relation.type}-${relation.child_parameter}`;
-        }
-
-        const edge = {
-          id: `edge-${uid.rnd()}`,
-          source: sourceId,
-          target: templateNode.id,
-          sourceHandle,
-          targetHandle,
-        };
-        
-        newEdges.push(edge);
-      });
-
-      if (relationOperations && relationOperations.length > 0) {
-        relationOperations.forEach((operation, childIndex) => {
-          // Pasar el nodo actual como parentNode para las operaciones anidadas
-          loadTemplateAndOperations(
-            operation.operation_schema_id,
-            level + 1,
-            childIndex,
-            operation.relation_fields,
-            operation.relation_operations,
-            templateNode // Pasamos el nodo actual como padre
-          );
-        });
-      }
-
-      return templateNode;
+    const position = {
+      x: LAYOUT_CONFIG.INITIAL_X + (level + 1) * LAYOUT_CONFIG.HORIZONTAL_SPACING,
+      y: LAYOUT_CONFIG.INITIAL_Y + index * LAYOUT_CONFIG.VERTICAL_SPACING
     };
 
+    const templateNode = createTemplateNode(selectedTemplate, selectedSchema, position, uid, onConnectHandler);
+    nodes.push(templateNode);
+
+    // Crear y agregar edges
+    const edges = createEdges(relationFields, parentNode || nodes[nodes.length - 2], templateNode, uid);
+    newEdges.push(...edges);
+
+    // Procesar operaciones anidadas
+    if (relationOperations && relationOperations.length > 0) {
+      relationOperations.forEach((operation, childIndex) => {
+        loadTemplateAndOperations({
+          templateId: operation.operation_schema_id,
+          level: level + 1,
+          index: childIndex,
+          relationFields: operation.relation_fields,
+          relationOperations: operation.relation_operations,
+          parentNode: templateNode,
+          nodes,
+          newEdges,
+          uid,
+          availableSchemas,
+          onConnectHandler
+        });
+      });
+    }
+
+    return templateNode;
+  }
+
+  function LoadNodes(flow, availableSchemas) {
+    const nodes = [];
+    const newEdges = [];
+    const uid = new ShortUniqueId();
+
+    // Crear nodo input
+    const inputNode = createInputNode(flow, LAYOUT_CONFIG);
+    nodes.push(inputNode);
+
+    // Iniciar la carga si hay un operation_schema_id
     if (flow.operation_schema_id) {
-      loadTemplateAndOperations(
-        flow.operation_schema_id,
-        0,
-        0,
-        flow.relation_fields,
-        flow.relation_operations
-      );
+      loadTemplateAndOperations({
+        templateId: flow.operation_schema_id,
+        relationFields: flow.relation_fields,
+        relationOperations: flow.relation_operations,
+        nodes,
+        newEdges,
+        uid,
+        availableSchemas,
+        onConnectHandler
+      });
     }
     
     setNodes(nodes);
     edgesRef.current = newEdges;
   }
 
-
-  // Memories
-  
-  const nodeTypes = useMemo(() => ({
-    template: props => (
+  const TemplateNodeComponent = useMemo(() => 
+    React.memo(props => (
       <TemplateNode
         {...props}
-        onFieldSelect={handleFieldSelect}
-        isFieldSelected={isFieldSelected}
       />
-    ),
-    input: (props) => (
-      <InputNode
-        {...props}
-        updateNodeData={(newData) => {
-          setNodes((nds) =>
-            nds.map((node) => {
-              if (node.id === props.id) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    ...newData,
-                  },
-                };
-              }
-              return node;
-            })
-          );
-        }}
-      />
-    ),
-  }), [handleFieldSelect, isFieldSelected, setNodes]);
+    ), (prevProps, nextProps) => {
+      return prevProps.id === nextProps.id && 
+             prevProps.data.template.id === nextProps.data.template.id &&
+             prevProps.data.template.name === nextProps.data.template.name;
+    }), 
+  []);
+
+  const InputNodeComponent = useCallback(props => (
+    <InputNode
+      {...props}
+      updateNodeData={(newData) => handleInputNodeUpdate(props.id, newData)}
+    />
+  ), [handleInputNodeUpdate]);
+
+  const nodeTypes = useMemo(() => ({
+    template: TemplateNodeComponent,
+    input: InputNodeComponent
+  }), [TemplateNodeComponent, InputNodeComponent]);
+
+
+  // Funciones de conversión
+  const convertToTemplateFields = (fieldResponse) => {
+    if (!fieldResponse) return new Map();
+    
+    return fieldResponse.fields_response.reduce((map, field) => {
+      const templateKey = `${field.operation_name}-${fieldResponse.id}`;
+      const currentFields = map.get(templateKey) || [];
+      if (!currentFields.includes(field.field_response)) {
+        map.set(templateKey, [...currentFields, field.field_response]);
+      }
+      return map;
+    }, new Map());
+  };
+
 
 
   return (
