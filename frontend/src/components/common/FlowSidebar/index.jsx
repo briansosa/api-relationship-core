@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Tabs, Dropdown, Modal, List, Collapse, Select, Divider } from 'antd';
+import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Collapse, Select, Dropdown, Modal, List, Divider } from 'antd';
 import { SearchOutlined, PlusOutlined, ApiOutlined, ShareAltOutlined, MoreOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -28,6 +28,7 @@ const FlowSidebar = ({
   const [newFlowName, setNewFlowName] = useState('');
   const [isFieldResponseModalVisible, setIsFieldResponseModalVisible] = useState(false);
   const [newFieldResponseName, setNewFieldResponseName] = useState('');
+  const [showFlowSearch, setShowFlowSearch] = useState(false);
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
@@ -208,142 +209,191 @@ const FlowSidebar = ({
     </div>
   );
 
-  const items = [
-    {
-      key: 'flows',
-      label: (
-        <span>
-          <ShareAltOutlined />
-          Flows
-        </span>
-      ),
-      children: (
-        <div style={{ padding: '0 8px' }}>
-          <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={onAddFlow}
-              style={{ width: '100%' }}
-            >
-              Nuevo Flow
-            </Button>
-            <Input
-              prefix={<SearchOutlined />}
-              placeholder="Buscar flow..."
-              value={searchText}
-              onChange={e => setSearchText(e.target.value)}
-            />
-          </Space>
-          <div style={{ 
-            height: 'calc(100vh - 250px)',
-            overflow: 'auto',
-            padding: '8px 0'
-          }}>
-            {filteredFlows.map(flow => (
-              <div
-                key={flow.id}
-                style={{
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  borderRadius: '4px',
-                  marginBottom: '4px',
-                  backgroundColor: selectedFlowId === flow.id ? '#e6f7ff' : 'transparent',
-                  transition: 'background-color 0.3s',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-                onMouseEnter={() => setHoveredItem(flow.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-                onClick={() => handleFlowSelect(flow.id)}
-              >
-                <div style={{ flex: 1 }}>
-                  {flow.name}
-                </div>
-                <Dropdown
-                  menu={getDropdownItems(flow)}
-                  trigger={['click']}
-                >
-                  <MoreOutlined 
-                    style={{ 
-                      padding: '4px',
-                      cursor: 'pointer',
-                      visibility: hoveredItem === flow.id ? 'visible' : 'hidden'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </Dropdown>
-              </div>
-            ))}
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'templates',
-      label: (
-        <span>
-          <ApiOutlined />
-          Templates
-        </span>
-      ),
-      children: (
-        <div style={{ padding: '0 8px' }}>
-          <Input
-            placeholder="Buscar template..."
-            prefix={<SearchOutlined />}
-            onChange={e => setSearchText(e.target.value)}
-            style={{ marginBottom: 8 }}
-          />
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-              <Spin />
+  const FlowsSection = () => (
+    <div style={{ padding: '0 8px' }}>
+      <div style={{ 
+        height: 'calc(100vh - 450px)',
+        overflow: 'auto',
+        padding: '4px 0'
+      }}>
+        {filteredFlows.map(flow => (
+          <div
+            key={flow.id}
+            style={{
+              padding: '4px 8px',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              marginBottom: '2px',
+              backgroundColor: selectedFlowId === flow.id 
+                ? '#e6f7ff' 
+                : hoveredItem === flow.id 
+                  ? '#e6f4ff'
+                  : 'transparent',
+              transition: 'background-color 0.2s ease',
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={() => setHoveredItem(flow.id)}
+            onMouseLeave={() => setHoveredItem(null)}
+            onClick={() => handleFlowSelect(flow.id)}
+          >
+            <div style={{ 
+              flex: 1,
+              textAlign: 'left',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {flow.name}
             </div>
-          ) : schemas.length === 0 ? (
-            <Empty 
-              description="No hay templates disponibles" 
-              style={{ margin: '20px 0' }}
-            />
-          ) : (
-            <Tree
-              showLine
-              defaultExpandAll
-              onSelect={onTemplateSelect}
-              treeData={buildTreeData()}
-              filterTreeNode={(node) => {
-                if (searchText.trim() === '') return true;
-                return node.title.toLowerCase().includes(searchText.toLowerCase());
-              }}
-              style={{ 
-                overflow: 'auto',
-                maxHeight: 'calc(100vh - 200px)'
-              }}
-            />
-          )}
+            <Dropdown
+              menu={getDropdownItems(flow)}
+              trigger={['click']}
+            >
+              <MoreOutlined 
+                style={{ 
+                  padding: '4px',
+                  cursor: 'pointer',
+                  visibility: hoveredItem === flow.id ? 'visible' : 'hidden',
+                  marginLeft: 'auto'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Dropdown>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const FlowHeader = () => (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      width: '100%' 
+    }}>
+      <Space align="center" style={{ flex: 1 }}>
+        <ShareAltOutlined />
+        <span>Flows</span>
+        {showFlowSearch && (
+          <Input
+            size="small"
+            placeholder="Buscar flow..."
+            value={searchText}
+            onChange={e => {
+              e.stopPropagation();
+              setSearchText(e.target.value);
+            }}
+            style={{ 
+              width: 120,
+              marginLeft: 8
+            }}
+            autoFocus
+            onKeyDown={e => e.stopPropagation()}
+            onFocus={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+          />
+        )}
+      </Space>
+      <Space>
+        <Button 
+          type="text" 
+          icon={<SearchOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowFlowSearch(!showFlowSearch);
+            if (!showFlowSearch) {
+              setSearchText('');
+            }
+          }}
+          size="small"
+          style={{ 
+            backgroundColor: showFlowSearch ? '#e6f4ff' : 'transparent',
+            color: showFlowSearch ? '#1677ff' : undefined
+          }}
+        />
+        <Button 
+          type="text" 
+          icon={<PlusOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddFlow();
+          }}
+          size="small"
+        />
+      </Space>
+    </div>
+  );
+
+  const TemplatesSection = () => (
+    <div style={{ padding: '0 8px' }}>
+      <Input
+        placeholder="Buscar template..."
+        prefix={<SearchOutlined />}
+        onChange={e => setSearchText(e.target.value)}
+        style={{ marginBottom: 8 }}
+      />
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <Spin />
         </div>
-      )
-    },
-    {
-      key: 'fields-response',
-      label: (
-        <span>
-          <ApiOutlined />
-          Fields Response
-        </span>
-      ),
-      children: <FieldsResponseSection />
-    }
-  ];
+      ) : schemas.length === 0 ? (
+        <Empty 
+          description="No hay templates disponibles" 
+          style={{ margin: '20px 0' }}
+        />
+      ) : (
+        <Tree
+          showLine
+          defaultExpandAll
+          onSelect={onTemplateSelect}
+          treeData={buildTreeData()}
+          filterTreeNode={(node) => {
+            if (searchText.trim() === '') return true;
+            return node.title.toLowerCase().includes(searchText.toLowerCase());
+          }}
+          style={{ 
+            overflow: 'auto',
+            maxHeight: 'calc(100vh - 450px)'
+          }}
+        />
+      )}
+    </div>
+  );
 
   return (
     <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <Tabs defaultActiveKey="flows" items={items.filter(item => item.key !== 'fields-response')} />
-        </div>
-        <FieldsResponseSection />
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Collapse 
+          defaultActiveKey={['flows']} 
+          style={{ flex: 1, overflowY: 'auto' }}
+        >
+          <Collapse.Panel 
+            header={<FlowHeader />}
+            key="flows"
+          >
+            <FlowsSection />
+          </Collapse.Panel>
+          
+          <Collapse.Panel 
+            header={<Space><ApiOutlined />Templates</Space>} 
+            key="templates"
+          >
+            <TemplatesSection />
+          </Collapse.Panel>
+          
+          <Collapse.Panel 
+            header={<Space><ApiOutlined />Fields Response</Space>} 
+            key="fields-response"
+          >
+            <FieldsResponseSection />
+          </Collapse.Panel>
+        </Collapse>
       </div>
+
       <Modal
         title="Renombrar Flujo"
         open={isModalVisible}
@@ -356,6 +406,7 @@ const FlowSidebar = ({
           placeholder="Nuevo nombre del flujo"
         />
       </Modal>
+      
       <Modal
         title="Rename Field Response"
         open={isFieldResponseModalVisible}

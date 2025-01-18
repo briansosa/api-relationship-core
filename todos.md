@@ -48,6 +48,7 @@ Fields response-> Al hacer click en un check no se esta actualizando en el field
 Flows-> Arreglar la sidebar acomodando los componentes
 
 ## Lo que falta
+Flows -> definir un tamaño default de los nodos y para que se muestren los campos haya una barrita q suba y baje
 Fields response-> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
 TemplateView -> Unificar operation schemas y template. No tiene sentido tener dos vistas para esto
 
