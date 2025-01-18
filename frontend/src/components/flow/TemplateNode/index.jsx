@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Handle, Position, NodeResizer } from 'reactflow';
 import { Card, Typography, Tag, Checkbox, Button, Divider, Modal, Form, InputNumber, Select } from 'antd';
 import { CaretRightOutlined, SettingOutlined } from '@ant-design/icons';
@@ -8,15 +8,82 @@ import { useFlowContext } from '../../../context/FlowContext';
 
 const { Text } = Typography;
 
+// Nuevo componente FieldCheckbox
+const FieldCheckbox = memo(({ 
+  handleId, 
+  fields, 
+  onSelect 
+}) => {
+  return (
+    <Checkbox
+      checked={fields.has(handleId)}
+      onChange={(e) => onSelect(handleId, e.target.checked)}
+    />
+  );
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.handleId === nextProps.handleId &&
+    prevProps.fields === nextProps.fields
+  );
+});
+
 // Componente para mostrar la estructura jerárquica del schema
-const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRootArray = false, managerOnFieldSelect, fields }) => {
+const SchemaNode = memo(({ 
+  name, 
+  value, 
+  level = 0, 
+  fullPath = '', 
+  templateName, 
+  isRootArray = false, 
+  managerOnFieldSelect, 
+  fields 
+}) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
-  const getNodeType = (val) => {
-    if (Array.isArray(val)) return 'array';
-    if (typeof val === 'object' && val !== null) return 'object';
-    return typeof val;
-  };
+  // Memorizar el tipo de nodo y sus propiedades
+  const nodeInfo = useMemo(() => {
+    const getNodeType = (val) => {
+      if (Array.isArray(val)) return 'array';
+      if (typeof val === 'object' && val !== null) return 'object';
+      return typeof val;
+    };
+    
+    const nodeType = getNodeType(value);
+    const isExpandable = nodeType === 'object' || nodeType === 'array';
+    
+    let children;
+    if (nodeType === 'array') {
+      children = value[0];
+      if (name === "0") name = "";
+    } else {
+      children = value;
+    }
+
+    return { nodeType, isExpandable, children };
+  }, [value, name]);
+
+  // Memorizar el path
+  const { currentPath, handleId } = useMemo(() => {
+    let currentPath;
+    if (nodeInfo.nodeType === 'array') {
+      if (name) {
+        currentPath = fullPath ? `${fullPath}.${name}.#` : `${name}.#`;
+      } else {
+        currentPath = fullPath ? `${fullPath}.#` : '#';
+      }
+    } else {
+      if (isRootArray) {
+        currentPath = name ? `${fullPath}.${name}` : fullPath;
+      } else {
+        currentPath = name ? (fullPath ? `${fullPath}.${name}` : name) : fullPath;
+      }
+    }
+
+    return { 
+      currentPath,
+      handleId: currentPath 
+    };
+  }, [nodeInfo.nodeType, name, fullPath, isRootArray]);
 
   const getTypeColor = (type) => {
     const colors = {
@@ -29,53 +96,18 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRoo
     return colors[type] || 'default';
   };
 
-  const nodeType = getNodeType(value);
-  const isExpandable = nodeType === 'object' || nodeType === 'array';
-  
-  let children;
-  if (nodeType === 'array') {
-    children = value[0];
-    if (name === "0") name = "";
-  } else {
-    children = value;
-  }
-
-  // Construir el path completo para este nodo
-  let currentPath;
-  if (nodeType === 'array') {
-    if (name) {
-      // Si el array tiene un nombre (como 'results'), incluirlo en el path
-      currentPath = fullPath ? `${fullPath}.${name}.#` : `${name}.#`;
-    } else {
-      // Si es un array raíz o anónimo
-      currentPath = fullPath ? `${fullPath}.#` : '#';
-    }
-  } else {
-    if (isRootArray) {
-      // Si es un campo dentro de un array
-      currentPath = name ? `${fullPath}.${name}` : fullPath;
-    } else {
-      // Para objetos normales y otros tipos
-      currentPath = name ? (fullPath ? `${fullPath}.${name}` : name) : fullPath;
-    }
-  }
-
-  // El handleId será el mismo que currentPath
-  const handleId = currentPath;
-
   return (
     <div className="schema-node" style={{ marginLeft: level * 8 }}>
       <div className="schema-header">
         <div className="schema-header-left">
-          {!isExpandable && (
-            <Checkbox
-              checked={fields.includes(handleId)}
-              onChange={(e) => {
-                managerOnFieldSelect?.(handleId, e.target.checked);
-              }}
+          {!nodeInfo.isExpandable && (
+            <FieldCheckbox
+              handleId={handleId}
+              fields={fields}
+              onSelect={managerOnFieldSelect}
             />
           )}
-          {isExpandable && (
+          {nodeInfo.isExpandable && (
             <CaretRightOutlined 
               className={`caret ${isExpanded ? 'expanded' : ''}`}
               onClick={() => setIsExpanded(!isExpanded)}
@@ -85,10 +117,10 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRoo
         </div>
 
         <div className="schema-header-right">
-          <Tag color={getTypeColor(nodeType)}>
-            {nodeType === 'array' ? 'array' : nodeType}
+          <Tag color={getTypeColor(nodeInfo.nodeType)}>
+            {nodeInfo.nodeType === 'array' ? 'array' : nodeInfo.nodeType}
           </Tag>
-          {!isExpandable && (
+          {!nodeInfo.isExpandable && (
             <Handle
               type="source"
               position={Position.Right}
@@ -99,9 +131,9 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRoo
         </div>
       </div>
       
-      {isExpandable && isExpanded && (
+      {nodeInfo.isExpandable && isExpanded && (
         <div className="schema-children">
-          {Object.entries(children || {}).map(([key, val]) => (
+          {Object.entries(nodeInfo.children || {}).map(([key, val]) => (
             <SchemaNode
               key={key}
               name={key}
@@ -109,7 +141,7 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRoo
               level={level + 1}
               fullPath={currentPath}
               templateName={templateName}
-              isRootArray={nodeType === 'array' || isRootArray}
+              isRootArray={nodeInfo.nodeType === 'array' || isRootArray}
               managerOnFieldSelect={managerOnFieldSelect}
               fields={fields}
             />
@@ -118,7 +150,60 @@ const SchemaNode = ({ name, value, level = 0, fullPath = '', templateName, isRoo
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Solo re-renderizar si cambian estos props
+  return (
+    prevProps.name === nextProps.name &&
+    prevProps.fullPath === nextProps.fullPath &&
+    prevProps.fields === nextProps.fields &&
+    prevProps.isRootArray === nextProps.isRootArray
+  );
+});
+
+// Nuevo componente ResponsePanel
+const ResponsePanel = memo(({ 
+  schemaData, 
+  templateName, 
+  fields, 
+  managerOnFieldSelect 
+}) => {
+  return (
+    <div className="response-panel">
+      <Text strong>Respuesta</Text>
+      <div className="response-list">
+        {schemaData && (Array.isArray(schemaData) ? (
+          <SchemaNode 
+            key="root"
+            name=""
+            value={schemaData}
+            templateName={templateName}
+            isRootArray={true}
+            managerOnFieldSelect={managerOnFieldSelect}
+            fields={fields}
+          />
+        ) : (
+          Object.entries(schemaData).map(([key, val]) => (
+            <SchemaNode 
+              key={key}
+              name={key}
+              value={val}
+              templateName={templateName}
+              isRootArray={false}
+              managerOnFieldSelect={managerOnFieldSelect}
+              fields={fields}
+            />
+          ))
+        ))}
+      </div>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.templateName === nextProps.templateName &&
+    prevProps.fields === nextProps.fields &&
+    prevProps.schemaData === nextProps.schemaData
+  );
+});
 
 // Componente TemplateNode principal
 const TemplateNode = ({ data, selected }) => {
@@ -226,6 +311,50 @@ const TemplateNode = ({ data, selected }) => {
     setSearchType(template.search_type || 'simple');
   }, [template]);
 
+  // Memorizar el panel de parámetros
+  const ParametersPanel = useMemo(() => (
+    <div className="parameters-panel">
+      <Text strong>Parámetros</Text>
+      <div className="parameters-list">
+        {template.params?.map((param, index) => (
+          <div 
+            key={`${param.type}-${param.name}-${index}`} 
+            className="parameter-item"
+          >
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={`param-${param.type}-${param.name}`}
+              className="connection-handle"
+            />
+            <Tag color={getParamTypeColor(param.type)}>
+              {param.type === 'query_param' ? 'query' : param.type}
+            </Tag>
+            <Text>{param.name}</Text>
+          </div>
+        ))}
+      </div>
+    </div>
+  ), [template.params]);
+
+  // Memorizar el header del Card
+  const CardTitle = useMemo(() => (
+    <div className="template-node-header">
+      <Tag color={getMethodColor(template.method_type)}>
+        {template.method_type}
+      </Tag>
+      <Text strong style={{ flex: 1, textAlign: 'center' }}>
+        {template.name}
+      </Text>
+      <Button
+        type="text"
+        icon={<SettingOutlined />}
+        onClick={() => setIsConfigModalVisible(true)}
+        className="config-button"
+      />
+    </div>
+  ), [template.method_type, template.name]);
+
   return (
     <TemplateFieldsManager 
       templateName={template.name}
@@ -242,80 +371,20 @@ const TemplateNode = ({ data, selected }) => {
           />
           <Card 
             className="template-node"
-            title={
-              <div className="template-node-header">
-                <Tag color={getMethodColor(template.method_type)}>
-                  {template.method_type}
-                </Tag>
-                <Text strong style={{ flex: 1, textAlign: 'center' }}>
-                  {template.name}
-                </Text>
-                <Button
-                  type="text"
-                  icon={<SettingOutlined />}
-                  onClick={() => setIsConfigModalVisible(true)}
-                  className="config-button"
-                />
-              </div>
-            }
+            title={CardTitle}
             size="small"
           >
             <div className="template-node-content">
-              {/* Panel Izquierdo - Parámetros */}
-              <div className="parameters-panel">
-                <Text strong>Parámetros</Text>
-                <div className="parameters-list">
-                  {template.params?.map((param, index) => (
-                    <div 
-                      key={`${param.type}-${param.name}-${index}`} 
-                      className="parameter-item"
-                    >
-                      <Handle
-                        type="target"
-                        position={Position.Left}
-                        id={`param-${param.type}-${param.name}`}
-                        className="connection-handle"
-                      />
-                      <Tag color={getParamTypeColor(param.type)}>
-                        {param.type === 'query_param' ? 'query' : param.type}
-                      </Tag>
-                      <Text>{param.name}</Text>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {ParametersPanel}
 
               <Divider type="vertical" className="panel-divider" />
 
-              {/* Panel Derecho - Respuesta */}
-              <div className="response-panel">
-                <Text strong>Respuesta</Text>
-                <div className="response-list">
-                  {schemaData && (Array.isArray(schemaData) ? (
-                    <SchemaNode 
-                      key="root"
-                      name=""
-                      value={schemaData}
-                      templateName={template.name}
-                      isRootArray={true}
-                      managerOnFieldSelect={managerOnFieldSelect}
-                      fields={fields}
-                    />
-                  ) : (
-                    Object.entries(schemaData).map(([key, val]) => (
-                      <SchemaNode 
-                        key={key}
-                        name={key}
-                        value={val}
-                        templateName={template.name}
-                        isRootArray={false}
-                        managerOnFieldSelect={managerOnFieldSelect}
-                        fields={fields}
-                      />
-                    ))
-                  ))}
-                </div>
-              </div>
+              <ResponsePanel
+                schemaData={schemaData}
+                templateName={template.name}
+                fields={fields}
+                managerOnFieldSelect={managerOnFieldSelect}
+              />
             </div>
           </Card>
 

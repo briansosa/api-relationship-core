@@ -4,17 +4,22 @@ import { useTemplateFields } from '../../../context/TemplateFieldsContext';
 const TemplateFieldsManager = ({ templateName, fieldResponseId, children }) => {
   const { templateFields, toggleField } = useTemplateFields();
   
-  const templateKey = `${templateName}-${fieldResponseId}`;
-  const fields = useMemo(() => {
-    return templateFields.get(templateKey) || [];
-  }, [templateFields, templateKey]);
+  const templateKey = useMemo(() => 
+    `${templateName}-${fieldResponseId}`,
+    [templateName, fieldResponseId]
+  );
+  
+  const templateSpecificFields = useMemo(() => 
+    templateFields.get(templateKey) || [],
+    [templateFields, templateKey]
+  );
 
   const handleFieldSelect = useCallback((fieldPath, isChecked) => {
     toggleField(templateName, fieldPath, isChecked, fieldResponseId);
   }, [templateName, fieldResponseId, toggleField]);
 
   return children({ 
-    fields,
+    fields: templateSpecificFields,
     onFieldSelect: handleFieldSelect 
   });
 };

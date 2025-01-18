@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { useFlowContext } from './FlowContext';
 
 const TemplateFieldsContext = createContext(null);
 
 export function TemplateFieldsProvider({ children }) {
   const [templateFields, setTemplateFields] = useState(new Map());
+  const { fieldResponseSelected, setFieldResponseSelected } = useFlowContext();
 
   // Funciones de conversión
   const convertToTemplateFields = useCallback((fieldResponse) => {
@@ -11,10 +13,11 @@ export function TemplateFieldsProvider({ children }) {
     
     return fieldResponse.fields_response.reduce((map, field) => {
       const templateKey = `${field.operation_name}-${fieldResponse.id}`;
-      const currentFields = map.get(templateKey) || [];
-      if (!currentFields.includes(field.field_response)) {
-        map.set(templateKey, [...currentFields, field.field_response]);
+      const currentFields = map.get(templateKey) || new Set();
+      if (!currentFields.has(field.field_response)) {
+        currentFields.add(field.field_response);
       }
+      map.set(templateKey, currentFields);
       return map;
     }, new Map());
   }, []);
@@ -24,7 +27,7 @@ export function TemplateFieldsProvider({ children }) {
     
     return Array.from(templateFields.entries()).flatMap(([key, fields]) => {
       const [templateName] = key.split('-');
-      return fields.map(field => ({
+      return Array.from(fields).map(field => ({
         operation_name: templateName,
         field_response: field
       }));
@@ -41,28 +44,42 @@ export function TemplateFieldsProvider({ children }) {
 
   const toggleField = useCallback((templateName, fieldPath, isChecked, fieldResponseId) => {
     if (!fieldResponseId) return;
-
+    
     setTemplateFields(prevFields => {
-      const newMap = new Map(prevFields);
       const templateKey = `${templateName}-${fieldResponseId}`;
-      const currentFields = newMap.get(templateKey) || [];
-
+      const currentFields = prevFields.get(templateKey) || new Set();
+      
+      if (isChecked && currentFields.has(fieldPath)) return prevFields;
+      if (!isChecked && !currentFields.has(fieldPath)) return prevFields;
+      
+      const newFields = new Set(currentFields);
       if (isChecked) {
-        if (currentFields.some(f => f === fieldPath)) return prevFields;
-        newMap.set(templateKey, [...currentFields, fieldPath]);
+        newFields.add(fieldPath);
       } else {
-        newMap.set(templateKey, currentFields.filter(f => f !== fieldPath));
+        newFields.delete(fieldPath);
       }
+      
+      const newMap = new Map(prevFields);
+      newMap.set(templateKey, newFields);
 
+      // Actualizar también fieldResponseSelected
+      if (fieldResponseSelected) {
+        const updatedFields = convertToFieldResponse(newMap, fieldResponseSelected);
+        setFieldResponseSelected({
+          ...fieldResponseSelected,
+          fields_response: updatedFields
+        });
+      }
+      
       return newMap;
     });
-  }, []);
+  }, [fieldResponseSelected, setFieldResponseSelected, convertToFieldResponse]);
 
   const isFieldSelected = useCallback((templateName, fieldPath, fieldResponseId) => {
-    if (!fieldResponseId) return false;
+    if (!fieldResponseId) return false;    
     const templateKey = `${templateName}-${fieldResponseId}`;
-    const fields = templateFields.get(templateKey) || [];
-    return fields.includes(fieldPath);
+    const fields = templateFields.get(templateKey) || new Set();
+    return fields.has(fieldPath);
   }, [templateFields]);
 
   const getFieldsResponse = useCallback((fieldResponseSelected) => {

@@ -37,14 +37,14 @@ const FlowView = () => {
   const navigate = useNavigate();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { fieldResponseSelected, setFieldResponseSelected } = useFlowContext();
   const [schemas, setSchemas] = useState([]);
   const [state, setState] = useState({
     entity: entityInit,
     id: urlParams.id ? urlParams.id : "0",
     flows: [],
     disable: true,
-    fieldsResponses: [],
-    fieldResponseSelected: null
+    fieldsResponses: []
   });
 
   const { 
@@ -54,8 +54,6 @@ const FlowView = () => {
     isFieldSelected, 
     getFieldsResponse
   } = useTemplateFields();
-
-  const { setFieldResponseSelected } = useFlowContext();
 
   useEffect(() => {    
     if (!urlParams.id && !urlParams.mode) {
@@ -244,7 +242,7 @@ const FlowView = () => {
         parent_field: parentField,
         child_parameter: childParameter
       };
-    });
+    });    
 
     // Construir la entidad a guardar
     const flowEntity = {
@@ -256,13 +254,13 @@ const FlowView = () => {
       relation_fields: relationFields,
       relation_operations: relationOperations || [],
       fields_response_id: state.entity.fields_response_id,
-      fields_response: getFieldsResponse(state.fieldResponseSelected)
+      fields_response: getFieldsResponse(fieldResponseSelected)
     };
 
     console.log('Entidad a guardar:', flowEntity);
-    console.log('Fields response guardar:', state.fieldResponseSelected);
+    console.log('Fields response guardar:', fieldResponseSelected);
     
-    UpdateFieldsResponse(state.fieldResponseSelected).then(() => {
+    UpdateFieldsResponse(fieldResponseSelected).then(() => {
       UpdateOperationFlow(flowEntity);
     }).catch((error) => {
       console.error('Error updating fields response:', error);
@@ -783,7 +781,7 @@ const FlowView = () => {
         schemas={schemas}
         flows={state.flows}
         fieldsResponses={state.fieldsResponses}
-        fieldResponseSelected={state.fieldResponseSelected}
+        fieldResponseSelected={fieldResponseSelected}
         onAddFlow={handleAddFlow}
         onDeleteFlow={handleDeleteFlow}
         onRenameFlow={handleRenameFlow}

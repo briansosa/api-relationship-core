@@ -41,34 +41,35 @@ Process View -> Delete process pendientes
 -> Hay respuestas json que arrancan como listas [] y no como objetos {}, en estos casos rompe el parseo del test endpoint. Ejemplo: https://jsonplaceholder.typicode.com/posts?userId=1
 Process Result -> Hacer el analisis de UX y UI de como voy a mostrar los resultados
 Process Result -> Finalizado la parte de mostrar resultados
+Fields response y flow-> Reveer logica de actualizacion de campos en los nodos del flow ya que todo el tiempo se estan actualizando al marcar o desmarcar un check
+Fields response-> Al hacer click en un check no se esta actualizando en el field response
 
 ##Lo que estoy ahora
+Flows-> Arreglar la sidebar acomodando los componentes
 
 ## Lo que falta
-Fields response y flow-> Reveer logica de actualizacion de campos en los nodos del flow ya que todo el tiempo se estan actualizando al marcar o desmarcar un check
+Fields response-> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
+TemplateView -> Unificar operation schemas y template. No tiene sentido tener dos vistas para esto
 
 
 Bardometro:
 
 Flows:
-    -> Agregar import de headers en input mediante archivo csv
     -> Hacer que se mantengan las posiciones de los nodos
+    -> Agregar import de headers en input mediante archivo csv
 
 Fields response:
     -> Quitar que todo el tiempo haga location(url) esto hace que se muevan las cosas de lugar. Hacer solo cuando sea necesario
-    -> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
-
     -> Hoy en dia para cursar un flow los fields response conectores tienen que estar checkeados. Poner una validacion antes de ejecutar o forzarlo
 
 Process View:
-    -> Agregar una opcion para que en vez de cargar un archivo csv, pueda abrirse una tabla con los headers y agregarle valores a manopla
     -> Agregar vista de lista
     -> Agregar borrar proceso, asi se borra el file tambien.
+    -> Agregar una opcion para que en vez de cargar un archivo csv, pueda abrirse una tabla con los headers y agregarle valores a manopla
 
 General:
-    -> Poner parametros en el body y probar flujos con post
-    -> Unificar operation schemas y template. No tiene sentido tener dos vistas para esto
     -> Ver de nombrar bien los flujos (esta bien schemas template y flows?)
+    -> Poner parametros en el body y probar flujos con post
     -> Mejorar el manejo de errores y logs. Agregar tags 
     -> Fijarse como funciona la parte de List Execution Type y Maximum Concurrency cuando el json comienza como una lista
     -> Poner carpeta de fields en el root del proyecto y no dentro de backend
