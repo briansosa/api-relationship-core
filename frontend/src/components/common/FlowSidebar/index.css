@@ -203,4 +203,20 @@
 .ant-list-split .ant-list-item {
   border-bottom: none;
 }
+
+/* Estilos para Fields Response */
+.fields-response-controls {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.fields-response-select {
+  flex: 1;
+  min-width: 0; /* Importante para que el select pueda encogerse */
+}
+
+.fields-response-actions {
+  flex-shrink: 0; /* Evita que los botones se encojan */
 }

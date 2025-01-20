@@ -199,52 +199,38 @@ const FlowSidebar = ({
   const FieldsResponseSection = () => (
     <div className="fields-response-container">
       <div className="fields-response-header">
-        <Space>
+        <div className="fields-response-controls">
           <Select
-            style={{ width: 200 }}
+            className="fields-response-select"
             value={fieldResponseSelected ? fieldResponseSelected.id : undefined}
             onChange={onFieldsResponseSelect}
             placeholder="Select Fields Response"
-            dropdownRender={(menu) => (
-              <>
-                {menu}
-                {fieldResponseSelected && (
-                  <>
-                    <Divider style={{ margin: '8px 0' }} />
-                    <Button
-                      type="text"
-                      icon={<PlusOutlined />}
-                      onClick={handleAddFieldResponse}
-                      style={{ width: '100%', textAlign: 'left' }}
-                    >
-                      Add Fields Response
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
             options={fieldsResponses.map(item => ({
               label: item.name,
               value: item.id,
             }))}
           />
-          {fieldResponseSelected && (
-            <Space>
-              <Button 
-                type="text" 
-                icon={<EditOutlined />} 
-                onClick={handleRenameFieldResponse}
-                size="small"
-              />
-              <Button 
-                type="text" 
-                icon={<DeleteOutlined />} 
-                onClick={() => onDeleteFieldResponse(fieldResponseSelected.id)}
-                size="small"
-              />
-            </Space>
-          )}
-        </Space>
+          <Space className="fields-response-actions">
+            <Button 
+              type="text" 
+              icon={<EditOutlined />} 
+              onClick={handleRenameFieldResponse}
+              size="small"
+            />
+            <Button 
+              type="text" 
+              icon={<PlusOutlined />} 
+              onClick={handleAddFieldResponse}
+              size="small"
+            />
+            <Button 
+              type="text" 
+              icon={<DeleteOutlined />} 
+              onClick={() => onDeleteFieldResponse(fieldResponseSelected.id)}
+              size="small"
+            />
+          </Space>
+        </div>
       </div>
       {fieldResponseSelected && (
         <div style={{ marginTop: 2 }}>

@@ -43,9 +43,10 @@ Process Result -> Hacer el analisis de UX y UI de como voy a mostrar los resulta
 Process Result -> Finalizado la parte de mostrar resultados
 Fields response y flow-> Reveer logica de actualizacion de campos en los nodos del flow ya que todo el tiempo se estan actualizando al marcar o desmarcar un check
 Fields response-> Al hacer click en un check no se esta actualizando en el field response
+Flows-> Arreglar la sidebar acomodando los componentes
 
 ##Lo que estoy ahora
-Flows-> Arreglar la sidebar acomodando los componentes
+Flows general -> Al cargar algunos flows o tambien cuando creo un nuevo fields response, aparece el error "TypeError: fields.has is not a function. (In 'fields.has(handleId)', 'fields.has' is undefined)"
 
 ## Lo que falta
 Flows -> definir un tamaño default de los nodos y para que se muestren los campos haya una barrita q suba y baje
