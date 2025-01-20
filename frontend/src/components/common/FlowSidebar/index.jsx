@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './index.css';
 import { Layout, Input, Tree, Typography, Empty, Spin, Button, Space, Collapse, Select, Dropdown, Modal, List, Divider } from 'antd';
 import { SearchOutlined, PlusOutlined, ApiOutlined, ShareAltOutlined, MoreOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
@@ -29,10 +30,18 @@ const FlowSidebar = ({
   const [isFieldResponseModalVisible, setIsFieldResponseModalVisible] = useState(false);
   const [newFieldResponseName, setNewFieldResponseName] = useState('');
   const [showFlowSearch, setShowFlowSearch] = useState(false);
+  const [activeKeys, setActiveKeys] = useState(['flows']);
+  const [templateSearchText, setTemplateSearchText] = useState('');
+  const [showTemplateSearch, setShowTemplateSearch] = useState(false);
+  const [openTemplateGroups, setOpenTemplateGroups] = useState([]);
+  const [fieldsResponseSearchText, setFieldsResponseSearchText] = useState('');
+  const [showFieldsResponseSearch, setShowFieldsResponseSearch] = useState(false);
+  const [openFieldsResponseGroups, setOpenFieldsResponseGroups] = useState([]);
 
   const handleFlowSelect = (flowId) => {
     setSelectedFlowId(flowId);
     onFlowSelect?.(flowId);
+    setActiveKeys(['templates', 'fields-response']);
   };
 
   const filteredFlows = flows.filter(flow => 
@@ -40,17 +49,31 @@ const FlowSidebar = ({
   );
 
   const buildTreeData = () => {
-    return schemas.map(schema => ({
-      key: schema.id,
-      title: schema.name,
-      selectable: false,
-      children: schema.list_templates?.map(template => ({
-        key: template.id,
-        title: template.name,
-        isLeaf: true,
-        template: template
-      }))
-    }));
+    return schemas.map(schema => {
+      // Filtramos los templates según el texto de búsqueda
+      const filteredTemplates = schema.list_templates?.filter(template =>
+        templateSearchText
+          ? template.name.toLowerCase().includes(templateSearchText.toLowerCase())
+          : true
+      );
+
+      // Solo incluimos el schema si tiene templates después del filtrado
+      if (filteredTemplates?.length === 0) {
+        return null;
+      }
+
+      return {
+        key: schema.id,
+        title: schema.name,
+        selectable: false,
+        children: filteredTemplates?.map(template => ({
+          key: template.id,
+          title: template.name,
+          isLeaf: true,
+          template: template
+        }))
+      };
+    }).filter(Boolean); // Removemos los schemas que quedaron null
   };
 
   const getDropdownItems = (flow) => ({
@@ -111,10 +134,58 @@ const FlowSidebar = ({
     setIsFieldResponseModalVisible(true);
   };
 
-  const groupFieldsByOperation = () => {   
-    const fields = fieldResponseSelected?.fields_response || []
+  const FieldsResponseHeader = () => (
+    <div className="section-header">
+      <Space align="center" style={{ flex: 1 }}>
+        <ApiOutlined />
+        <span>Fields Response</span>
+        {showFieldsResponseSearch && (
+          <Input
+            size="small"
+            placeholder="Buscar campo..."
+            value={fieldsResponseSearchText}
+            onChange={e => {
+              e.stopPropagation();
+              setFieldsResponseSearchText(e.target.value);
+            }}
+            className="section-header-search"
+            autoFocus
+            onKeyDown={e => e.stopPropagation()}
+            onFocus={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+          />
+        )}
+      </Space>
+      <Space>
+        <Button 
+          type="text" 
+          icon={<SearchOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowFieldsResponseSearch(!showFieldsResponseSearch);
+            if (showFieldsResponseSearch) {
+              setFieldsResponseSearchText('');
+            }
+          }}
+          size="small"
+          className={showFieldsResponseSearch ? 'search-button-active' : ''}
+        />
+      </Space>
+    </div>
+  );
 
-    const groupedFields = fields.reduce((acc, field) => {
+  const groupFieldsByOperation = () => {   
+    const fields = fieldResponseSelected?.fields_response || [];
+    const searchText = fieldsResponseSearchText.toLowerCase();
+
+    // Filtrar los campos según el texto de búsqueda
+    const filteredFields = fields.filter(field => 
+      !searchText || 
+      field.field_response.toLowerCase().includes(searchText) ||
+      field.operation_name.toLowerCase().includes(searchText)
+    );
+
+    const groupedFields = filteredFields.reduce((acc, field) => {
       if (!acc[field.operation_name]) {
         acc[field.operation_name] = [];
       }
@@ -126,20 +197,11 @@ const FlowSidebar = ({
   };
 
   const FieldsResponseSection = () => (
-    <div style={{ 
-      borderTop: '1px solid #f0f0f0',
-      padding: '16px 8px',
-      height: '50vh',
-      overflow: 'auto'
-    }}>
-      <div style={{ 
-        marginBottom: 16,
-        gap: 8
-      }}>
-        <Text strong>Fields Response</Text>
+    <div className="fields-response-container">
+      <div className="fields-response-header">
         <Space>
           <Select
-            style={{ width: 180 }}
+            style={{ width: 200 }}
             value={fieldResponseSelected ? fieldResponseSelected.id : undefined}
             onChange={onFieldsResponseSelect}
             placeholder="Select Fields Response"
@@ -185,18 +247,24 @@ const FlowSidebar = ({
         </Space>
       </div>
       {fieldResponseSelected && (
-        <div style={{ marginTop: 16 }}>
-          <Collapse defaultActiveKey={['1']} ghost>
+        <div style={{ marginTop: 2 }}>
+          <Collapse 
+            ghost
+            activeKey={openFieldsResponseGroups}
+            onChange={setOpenFieldsResponseGroups}
+          >
             {groupFieldsByOperation().map(([operation, fields], index) => (
               <Collapse.Panel 
-                header={<Text strong>{operation}</Text>}
-                key={index}
+                header={<Text style={{ fontWeight: 'normal' }}>{operation}</Text>}
+                key={operation}
               >
                 <List
                   size="small"
                   dataSource={fields}
                   renderItem={field => (
-                    <List.Item style={{ padding: '4px 0' }}>
+                    <List.Item 
+                      className="fields-response-item"
+                    >
                       <Text style={{ fontSize: '12px' }}>{field}</Text>
                     </List.Item>
                   )}
@@ -210,71 +278,37 @@ const FlowSidebar = ({
   );
 
   const FlowsSection = () => (
-    <div style={{ padding: '0 8px' }}>
-      <div style={{ 
-        height: 'calc(100vh - 450px)',
-        overflow: 'auto',
-        padding: '4px 0'
-      }}>
-        {filteredFlows.map(flow => (
-          <div
-            key={flow.id}
-            style={{
-              padding: '4px 8px',
-              cursor: 'pointer',
-              borderRadius: '4px',
-              marginBottom: '2px',
-              backgroundColor: selectedFlowId === flow.id 
-                ? '#e6f7ff' 
-                : hoveredItem === flow.id 
-                  ? '#e6f4ff'
-                  : 'transparent',
-              transition: 'background-color 0.2s ease',
-              display: 'flex',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseEnter={() => setHoveredItem(flow.id)}
-            onMouseLeave={() => setHoveredItem(null)}
-            onClick={() => handleFlowSelect(flow.id)}
-          >
-            <div style={{ 
-              flex: 1,
-              textAlign: 'left',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              {flow.name}
-            </div>
-            <Dropdown
-              menu={getDropdownItems(flow)}
-              trigger={['click']}
-            >
-              <MoreOutlined 
-                style={{ 
-                  padding: '4px',
-                  cursor: 'pointer',
-                  visibility: hoveredItem === flow.id ? 'visible' : 'hidden',
-                  marginLeft: 'auto'
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </Dropdown>
+    <div className="sidebar-scroll-container">
+      {filteredFlows.map(flow => (
+        <div
+          key={flow.id}
+          className={`flow-item-sidebar ${selectedFlowId === flow.id ? 'selected' : ''}`}
+          onMouseEnter={() => setHoveredItem(flow.id)}
+          onMouseLeave={() => setHoveredItem(null)}
+          onClick={() => handleFlowSelect(flow.id)}
+        >
+          <div className="flow-item-name">
+            {flow.name}
           </div>
-        ))}
-      </div>
+          <Dropdown
+            menu={getDropdownItems(flow)}
+            trigger={['click']}
+          >
+            <MoreOutlined 
+              className="flow-more-icon"
+              style={{ 
+                visibility: hoveredItem === flow.id ? 'visible' : 'hidden'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
+      ))}
     </div>
   );
 
   const FlowHeader = () => (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      alignItems: 'center',
-      width: '100%' 
-    }}>
+    <div className="section-header">
       <Space align="center" style={{ flex: 1 }}>
         <ShareAltOutlined />
         <span>Flows</span>
@@ -287,10 +321,130 @@ const FlowSidebar = ({
               e.stopPropagation();
               setSearchText(e.target.value);
             }}
+            className="section-header-search"
+            autoFocus
+            onKeyDown={e => e.stopPropagation()}
+            onFocus={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+          />
+        )}
+      </Space>
+      <Space>
+        <Button 
+          type="text" 
+          icon={<PlusOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddFlow();
+          }}
+          size="small"
+        />
+        <Button 
+          type="text" 
+          icon={<SearchOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowFlowSearch(!showFlowSearch);
+            if (!showFlowSearch) {
+              setSearchText('');
+            }
+          }}
+          size="small"
+          className={showFlowSearch ? 'search-button-active' : ''}
+        />
+      </Space>
+    </div>
+  );
+
+  const TemplatesSection = () => {
+    const buildTemplatesList = () => {
+      return schemas.map(schema => {
+        const filteredTemplates = schema.list_templates?.filter(template =>
+          templateSearchText
+            ? template.name.toLowerCase().includes(templateSearchText.toLowerCase())
+            : true
+        );
+
+        if (!filteredTemplates?.length) {
+          return null;
+        }
+
+        return {
+          schema,
+          templates: filteredTemplates
+        };
+      }).filter(Boolean);
+    };
+
+    return (
+      <div>
+        {schemas.length === 0 ? (
+          <Empty 
+            description="No hay templates disponibles" 
+            style={{ margin: '20px 0' }}
+          />
+        ) : (
+          <Collapse 
+            ghost
+            activeKey={openTemplateGroups}
+            onChange={setOpenTemplateGroups}
             style={{ 
-              width: 120,
-              marginLeft: 8
+              overflow: 'auto',
+              maxHeight: 'calc(100vh - 450px)'
             }}
+          >
+            {buildTemplatesList().map(({ schema, templates }) => (
+              <Collapse.Panel 
+                key={schema.id}
+                header={
+                  <Text style={{ fontWeight: 'normal' }}>{schema.name}</Text>
+                }
+                style={{ 
+                  textAlign: 'left',
+                  marginBottom: 0,
+                  borderBottom: 'none',
+                }}
+              >
+                <List
+                  size="small"
+                  dataSource={templates}
+                  className="template-list-container"
+                  renderItem={template => (
+                    <List.Item
+                      key={template.id}
+                      onClick={() => onTemplateSelect([template.id])}
+                      className="template-item-sidebar"
+                    >
+                      <Space size={4}>
+                        <ApiOutlined className="template-icon"/>
+                        <Text>{template.name}</Text>
+                      </Space>
+                    </List.Item>
+                  )}
+                />
+              </Collapse.Panel>
+            ))}
+          </Collapse>
+        )}
+      </div>
+    );
+  };
+
+  const TemplateHeader = () => (
+    <div className="section-header">
+      <Space align="center" style={{ flex: 1 }}>
+        <ApiOutlined />
+        <span>Templates</span>
+        {showTemplateSearch && (
+          <Input
+            size="small"
+            placeholder="Buscar template..."
+            value={templateSearchText}
+            onChange={e => {
+              e.stopPropagation();
+              setTemplateSearchText(e.target.value);
+            }}
+            className="section-header-search"
             autoFocus
             onKeyDown={e => e.stopPropagation()}
             onFocus={e => e.stopPropagation()}
@@ -304,72 +458,25 @@ const FlowSidebar = ({
           icon={<SearchOutlined />} 
           onClick={(e) => {
             e.stopPropagation();
-            setShowFlowSearch(!showFlowSearch);
-            if (!showFlowSearch) {
-              setSearchText('');
+            setShowTemplateSearch(!showTemplateSearch);
+            if (showTemplateSearch) {
+              setTemplateSearchText('');
             }
           }}
           size="small"
-          style={{ 
-            backgroundColor: showFlowSearch ? '#e6f4ff' : 'transparent',
-            color: showFlowSearch ? '#1677ff' : undefined
-          }}
-        />
-        <Button 
-          type="text" 
-          icon={<PlusOutlined />} 
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddFlow();
-          }}
-          size="small"
+          className={showTemplateSearch ? 'search-button-active' : ''}
         />
       </Space>
     </div>
   );
 
-  const TemplatesSection = () => (
-    <div style={{ padding: '0 8px' }}>
-      <Input
-        placeholder="Buscar template..."
-        prefix={<SearchOutlined />}
-        onChange={e => setSearchText(e.target.value)}
-        style={{ marginBottom: 8 }}
-      />
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <Spin />
-        </div>
-      ) : schemas.length === 0 ? (
-        <Empty 
-          description="No hay templates disponibles" 
-          style={{ margin: '20px 0' }}
-        />
-      ) : (
-        <Tree
-          showLine
-          defaultExpandAll
-          onSelect={onTemplateSelect}
-          treeData={buildTreeData()}
-          filterTreeNode={(node) => {
-            if (searchText.trim() === '') return true;
-            return node.title.toLowerCase().includes(searchText.toLowerCase());
-          }}
-          style={{ 
-            overflow: 'auto',
-            maxHeight: 'calc(100vh - 450px)'
-          }}
-        />
-      )}
-    </div>
-  );
-
   return (
-    <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Sider width={300} className="flow-sidebar">
+      <div className="sidebar-container">
         <Collapse 
-          defaultActiveKey={['flows']} 
-          style={{ flex: 1, overflowY: 'auto' }}
+          activeKey={activeKeys}
+          onChange={setActiveKeys}
+          className="main-collapse"
         >
           <Collapse.Panel 
             header={<FlowHeader />}
@@ -379,14 +486,14 @@ const FlowSidebar = ({
           </Collapse.Panel>
           
           <Collapse.Panel 
-            header={<Space><ApiOutlined />Templates</Space>} 
+            header={<TemplateHeader />}
             key="templates"
           >
             <TemplatesSection />
           </Collapse.Panel>
           
           <Collapse.Panel 
-            header={<Space><ApiOutlined />Fields Response</Space>} 
+            header={<FieldsResponseHeader />}
             key="fields-response"
           >
             <FieldsResponseSection />

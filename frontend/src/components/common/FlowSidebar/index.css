@@ -1,0 +1,206 @@
+/* Estilos para los items de template */
+.template-item-sidebar {
+  padding: 0px !important;
+  margin-left: 20px;
+  margin-bottom: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.template-item-sidebar::after {
+  content: '→';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #1677ff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.template-item-sidebar:hover::after {
+  opacity: 1;
+}
+
+.template-item-sidebar:hover {
+  background-color: #e6f4ff;
+}
+
+/* Estilos para los items de flow */
+.flow-item-sidebar {
+  padding: 4px 0;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-item-sidebar:hover {
+  background-color: #e6f4ff;
+}
+
+.flow-item-sidebar.selected {
+  background-color: #e6f7ff;
+}
+
+.flow-item-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 8px;
+}
+
+/* Estilos para los headers y contenido del collapse */
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
+  padding: 0;
+}
+
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-header {
+  padding: 4px 8px;
+}
+
+/* Estilos para los headers de sección */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.section-header-search {
+  width: 120px;
+  margin-left: 8px;
+}
+
+/* Estilos para el botón de búsqueda activo */
+.search-button-active {
+  background-color: #e6f4ff;
+  color: #1677ff;
+}
+
+/* Contenedores principales */
+.sidebar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+}
+
+.sidebar-scroll-container {
+  height: calc(100vh - 450px);
+  overflow: auto;
+  padding: 4px 0;
+}
+
+/* Estilos para los templates */
+.template-list-container {
+  margin-top: -8px;
+  margin-bottom: -8px;
+}
+
+.template-icon {
+  font-size: 14px;
+  color: #1677ff;
+}
+
+/* Estilos para los flows */
+.flow-more-icon {
+  padding: 4px;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 4px;
+}
+
+/* Estilos para Fields Response */
+.fields-response-container {
+  height: 50vh;
+  overflow: auto;
+}
+
+/* Estilos para los items de Fields Response */
+.fields-response-item {
+  padding: 0px !important;
+  margin-left: 20px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  position: relative;
+  border-bottom: none !important;
+}
+
+.fields-response-item:hover {
+  background-color: #e6f4ff;
+}
+
+.fields-response-item::after {
+  content: 'x';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #1677ff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.fields-response-item:hover::after {
+  opacity: 1;
+}
+
+/* Estilos para el Sider */
+.flow-sidebar {
+  background: #fff !important;
+  border-right: 1px solid #f0f0f0;
+}
+
+/* Estilos para el Collapse principal */
+.main-collapse {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+}
+
+/* Estilos para los headers del Collapse */
+.ant-collapse-ghost > .ant-collapse-item {
+  background: #fff;
+}
+
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-header {
+  padding: 4px 8px;
+  background: #fff;
+  justify-content: flex-start !important;
+}
+
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-header .ant-collapse-header-text {
+  flex: 1;
+  text-align: left;
+}
+
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-header .ant-collapse-expand-icon {
+  padding-inline-end: 8px;
+}
+
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content {
+  background: #fff;
+}
+
+.ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
+  padding: 0;
+  background: #fff;
+}
+
+/* Removemos los separadores de la lista */
+.ant-list-split .ant-list-item {
+  border-bottom: none;
+}
+}
