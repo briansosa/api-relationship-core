@@ -170,7 +170,6 @@ const ResponsePanel = memo(({
   fields, 
   managerOnFieldSelect 
 }) => {
-  // Asegurarse que fields sea un Set
   const fieldsSet = fields instanceof Set ? fields : new Set();
   
   return (

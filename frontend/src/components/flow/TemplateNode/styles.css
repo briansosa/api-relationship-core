@@ -1,5 +1,21 @@
+.react-flow__node-template {
+  border: none;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.react-flow__node-template:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+.react-flow__node-template .ant-card {
+  margin-bottom: 0;
+}
+
 .template-node {
   width: 100%;
+  height: 100%;
   min-width: 300px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;

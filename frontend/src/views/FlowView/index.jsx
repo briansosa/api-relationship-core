@@ -758,7 +758,8 @@ const FlowView = () => {
     ), (prevProps, nextProps) => {
       return prevProps.id === nextProps.id && 
              prevProps.data.template.id === nextProps.data.template.id &&
-             prevProps.data.template.name === nextProps.data.template.name;
+             prevProps.data.template.name === nextProps.data.template.name &&
+             prevProps.selected === nextProps.selected;
     }), 
   []);
 
@@ -807,15 +808,18 @@ const FlowView = () => {
             onConnect={onConnectHandler}
             onNodesDelete={handleNodesDelete}
             nodesDraggable={true}
-            panOnDrag={true}
+            panOnScroll={true}
+            panOnScrollMode="free"
+            panOnScrollSpeed={2}
+            zoomOnScroll={false}
+            zoomOnPinch={true}
+            zoomActivationKeyCode="Meta"
             defaultViewport={{ x: 100, y: 100, zoom: 0.4 }}
             minZoom={0.2}
             maxZoom={1.5}
             fitView
             fitViewOptions={{ padding: 50, minZoom: 0.8 }}
             deleteKeyCode={['Backspace', 'Delete']}
-            zoomOnScroll={true}
-            panOnScroll={false}
           >
             <Background />
             <Controls />
