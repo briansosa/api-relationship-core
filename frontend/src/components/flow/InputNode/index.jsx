@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Handle, Position, NodeResizer } from 'reactflow';
 import { Card, Typography, Tag, Input, Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined } from '@ant-design/icons';
 import './styles.css';
 
 const { Text } = Typography;
@@ -71,8 +71,9 @@ const InputNode = ({ data, selected, updateNodeData }) => {
           <div className="input-node-header">
             <span className="input-title">Inputs</span>
             <Button
-              type="primary"
-              icon={<PlusOutlined />}
+              type="text"
+              size="middle"
+              icon={<PlusCircleOutlined />}
               className="add-input-button"
               onClick={handleAddField}
             />
