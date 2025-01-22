@@ -14,9 +14,12 @@ const FieldCheckbox = memo(({
   fields, 
   onSelect 
 }) => {
+  // Asegurarse que fields sea un Set
+  const fieldsSet = fields instanceof Set ? fields : new Set();
+  
   return (
     <Checkbox
-      checked={fields.has(handleId)}
+      checked={fieldsSet.has(handleId)}
       onChange={(e) => onSelect(handleId, e.target.checked)}
     />
   );
@@ -167,6 +170,9 @@ const ResponsePanel = memo(({
   fields, 
   managerOnFieldSelect 
 }) => {
+  // Asegurarse que fields sea un Set
+  const fieldsSet = fields instanceof Set ? fields : new Set();
+  
   return (
     <div className="response-panel">
       <Text strong>Respuesta</Text>
@@ -179,7 +185,7 @@ const ResponsePanel = memo(({
             templateName={templateName}
             isRootArray={true}
             managerOnFieldSelect={managerOnFieldSelect}
-            fields={fields}
+            fields={fieldsSet}
           />
         ) : (
           Object.entries(schemaData).map(([key, val]) => (
@@ -190,7 +196,7 @@ const ResponsePanel = memo(({
               templateName={templateName}
               isRootArray={false}
               managerOnFieldSelect={managerOnFieldSelect}
-              fields={fields}
+              fields={fieldsSet}
             />
           ))
         ))}
