@@ -4,7 +4,8 @@ import {
   OperationTemplateView,
   ProcessView,
   FlowView,
-  ProcessResultView
+  ProcessResultView,
+  NewOperationSchemaView
 } from '../views';
 
 import {
@@ -27,6 +28,14 @@ export const AppRoutes = [
     path: ["/operation_schemas", "/operation_schemas/:mode", "/operation_schemas/:mode/:id"],
     component: OperationSchemaView,
     title: "Operation Schemas",
+    icon: <UserOutlined/>,
+    children: [],
+  },
+  {
+    // Nueva vista de Operation Schema
+    path: "/operation_schemas_new",
+    component: NewOperationSchemaView,
+    title: "Operation Schemas (New)",
     icon: <UserOutlined/>,
     children: [],
   },

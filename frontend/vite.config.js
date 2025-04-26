@@ -13,6 +13,11 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
   css: {
     preprocessorOptions: {
       less: {
@@ -21,5 +26,6 @@ export default defineConfig({
         javascriptEnabled: true
       },
     },
+    postcss: './postcss.config.cjs',
   }
 })

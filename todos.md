@@ -47,16 +47,17 @@ Flows-> Arreglar la sidebar acomodando los componentes
 
 ##Lo que estoy ahora
 Flows general -> Al cargar algunos flows o tambien cuando creo un nuevo fields response, aparece el error "TypeError: fields.has is not a function. (In 'fields.has(handleId)', 'fields.has' is undefined)"
+Fields response-> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
 
 ## Lo que falta
 Flows -> definir un tamaño default de los nodos y para que se muestren los campos haya una barrita q suba y baje
-Fields response-> Al eliminar un campo del listado en la sidebar si tiene que reflejar en los nodos (deseable)
-TemplateView -> Unificar operation schemas y template. No tiene sentido tener dos vistas para esto
+TemplateView -> Unificar operation schemas y template. No tiene sentido tener dos vistas para esto (revisarrrrr)
 
 
 Bardometro:
 
 Flows:
+    -> Cambiar el icono del add del nodo input
     -> Hacer que se mantengan las posiciones de los nodos
     -> Agregar import de headers en input mediante archivo csv
 

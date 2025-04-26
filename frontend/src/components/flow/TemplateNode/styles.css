@@ -9,6 +9,10 @@
   transition: box-shadow 0.3s ease;
 }
 
+.react-flow__node-template .react-flow__resize-control {
+  z-index: 1;
+}
+
 .react-flow__node-template .ant-card {
   margin-bottom: 0;
 }
@@ -334,4 +338,4 @@ parameter-item,
 
 .config-modal .ant-modal-footer {
   padding: 8px 12px;  /* Reducir el padding del footer */
-}
+} 

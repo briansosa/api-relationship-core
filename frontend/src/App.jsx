@@ -1,5 +1,6 @@
 import "./styles/App.css";
 import "./styles/global.less";
+import "./styles/index.css";
 import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider, theme } from "antd";
 import Router from "./Router";
