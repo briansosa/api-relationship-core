@@ -16,6 +16,7 @@ import {
   TabsList, 
   TabsTrigger 
 } from "../../../../components/ui/tabs";
+import EditableTable from "./EditableTable";
 
 const RequestForm = (props) => {
   const entityInit = {
@@ -69,23 +70,34 @@ const RequestForm = (props) => {
   };
 
   const handleSubmit = () => {
-    // Validación del formulario pendiente
+    try {
+      // Validación del body JSON
+      let parsedBody = null;
+      if (formValues.body && formValues.body.trim() !== "") {
+        try {
+          parsedBody = JSON.parse(formValues.body);
+        } catch (error) {
+          alert("El formato del JSON en el Body es inválido");
+          return;
+        }
+      }
 
-    const row = {
-      body: formValues.body && formValues.body.trim() !== "" 
-        ? JSON.parse(formValues.body) 
-        : null,
-      headers: Object.keys(formValues.headers).length === 0 ? null : formValues.headers,
-      method_type: formValues.method_type,
-      name: formValues.name,
-      query_params: Object.keys(formValues.query_params).length === 0 ? null : formValues.query_params,
-      request_type: formValues.request_type,
-      timeout: formValues.timeout,
-      url: formValues.url,
-      templates_id: formValues.templates_id,
-    };
+      const row = {
+        body: parsedBody,
+        headers: Object.keys(formValues.headers).length === 0 ? null : formValues.headers,
+        method_type: formValues.method_type,
+        name: formValues.name,
+        query_params: Object.keys(formValues.query_params).length === 0 ? null : formValues.query_params,
+        request_type: formValues.request_type,
+        timeout: formValues.timeout,
+        url: formValues.url,
+        templates_id: formValues.templates_id,
+      };
 
-    props.onConfirm(row);
+      props.onConfirm(row);
+    } catch (error) {
+      console.error("Error al enviar el formulario:", error);
+    }
   };
   
   const handleMethodChange = (value) => {
@@ -172,21 +184,23 @@ const RequestForm = (props) => {
         </TabsContent>
         
         <TabsContent value="headers" className="p-0 mt-4">
-          {/* Implementar EditableTable para headers - Pendiente */}
-          <div className="min-h-[65vh] bg-gray-50 rounded-md p-4 border border-gray-200">
-            <p className="text-gray-500 text-center">
-              Tabla de Headers (Pendiente de implementación)
-            </p>
-          </div>
+          <EditableTable
+            titleKey="Header"
+            titleValue="Valor"
+            name="headers"
+            data={formValues.headers}
+            onChange={formHandle}
+          />
         </TabsContent>
         
         <TabsContent value="queryParams" className="p-0 mt-4">
-          {/* Implementar EditableTable para query params - Pendiente */}
-          <div className="min-h-[65vh] bg-gray-50 rounded-md p-4 border border-gray-200">
-            <p className="text-gray-500 text-center">
-              Tabla de Query Params (Pendiente de implementación)
-            </p>
-          </div>
+          <EditableTable
+            titleKey="Parámetro"
+            titleValue="Valor"
+            name="query_params"
+            data={formValues.query_params}
+            onChange={formHandle}
+          />
         </TabsContent>
       </Tabs>
     </div>

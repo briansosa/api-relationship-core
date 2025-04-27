@@ -58,37 +58,36 @@ Fase 1: Operation Schema (5-6 días)
        - [✓] Agregar soporte para nombre editable
 
 2. Día 3: Componentes de Edición
-   [ ] Migración de EditableTable:
-       - Crear nuevo componente EditableTable.tsx usando Shadcn Table
-       - Implementar funcionalidad CRUD para headers
-       - Implementar funcionalidad CRUD para query params
-       - Agregar soporte para drag and drop de filas
-       - Implementar validación de campos
+   [✓] Migración de EditableTable:
+       - [✓] Crear nuevo componente EditableTable.tsx usando Shadcn Table
+       - [✓] Implementar funcionalidad CRUD para headers
+       - [✓] Implementar funcionalidad CRUD para query params
+       - [✓] Agregar soporte para validación de campos
 
 3. Día 4: Componentes Avanzados
-   [ ] Migración de CurlModal:
-       - Crear nuevo componente CurlModal.tsx
-       - Implementar Dialog de Shadcn
-       - Migrar TextArea para input de CURL
-       - Implementar parser de CURL mejorado
-       - Agregar validación y feedback de errores
+   [✓] Migración de CurlModal:
+       - [✓] Crear nuevo componente CurlModal.tsx
+       - [✓] Implementar Dialog de Shadcn
+       - [✓] Migrar TextArea para input de CURL
+       - [✓] Implementar parser de CURL mejorado
+       - [✓] Agregar validación y feedback de errores
 
 4. Día 5: Integración y Testing
    [ ] Integración de componentes:
-       - Unificar RequestForm con EditableTable
-       - Implementar sistema de tabs mejorado
-       - Agregar soporte para JSON Schema
-       - Implementar validación global
+       - [✓] Unificar RequestForm con EditableTable
+       - [ ] Implementar sistema de tabs mejorado
+       - [ ] Agregar soporte para JSON Schema
+       - [ ] Implementar validación global
 
 5. Día 6: Finalización y Switch
    [ ] Testing final y documentación:
-       - Pruebas de integración
-       - Pruebas de rendimiento
-       - Documentación de componentes
+       - [ ] Pruebas de integración
+       - [ ] Pruebas de rendimiento
+       - [ ] Documentación de componentes
    [ ] Switch de rutas:
-       - Implementar feature flag
-       - Realizar switch gradual
-       - Monitorear errores
+       - [ ] Implementar feature flag
+       - [ ] Realizar switch gradual
+       - [ ] Monitorear errores
 
 Fase 2: Operation Template (6-7 días)
 1. Día 1-2: Componentes Base
@@ -181,6 +180,13 @@ Estado Actual del Plan:
       [✓] Componente básico implementado con Shadcn/UI
       [✓] Implementados selects, inputs y textareas
       [✓] Implementado sistema de tabs
+   [✓] Migración de EditableTable
+      [✓] Componente implementado con Shadcn Table
+      [✓] Funcionalidad CRUD para headers y query params
+   [✓] Migración de CurlModal
+      [✓] Implementado con Dialog de Shadcn
+      [✓] Validación mejorada
+      [✓] Integrado con la vista principal
 
 2. Operation Template (Pendiente)
 3. Process (Pendiente)
@@ -188,14 +194,13 @@ Estado Actual del Plan:
 5. Flow (Pendiente)
 
 Próximos Pasos Inmediatos:
-1. Implementar EditableTable:
-   - Diseñar estructura del componente
-   - Implementar Table base de Shadcn
-   - Agregar funcionalidad de edición
-   - Implementar sistema de validación
+1. Completar la integración de componentes en OperationSchema:
+   - Implementar sistema de tabs mejorado con indicadores visuales
+   - Agregar soporte para JSON Schema con validación
+   - Implementar validación global del formulario
+   - Mejorar la experiencia de usuario con feedback visual
 
-2. Configurar CurlModal:
-   - Crear estructura del modal
-   - Implementar Dialog de Shadcn
-   - Migrar sistema de parsing
-   - Agregar validación mejorada
+2. Preparar el switch de rutas:
+   - Implementar feature flag para activar/desactivar la nueva vista
+   - Planificar el switch gradual
+   - Crear documentación para los componentes
