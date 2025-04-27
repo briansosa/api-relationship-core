@@ -1,0 +1,201 @@
+Lo que queremos realizar es una migración del frontend desde ant design a shadcn/ui y tailwindcss ya que posee varias ventajas sobre ant design que hoy en día no estan siendo eficientes.
+Necesitamos hacer una migración contralada y secuencial de las vistas, donde no debemos nunca dejar la aplicación sin funcionar. Para eso establecemos una estrategía donde vamos a ir creando una nueva vista en paralela con la actual, hasta que esta este terminada y funcionando para recien en ese momento hacer el switch. Crear la nueva vista implica tambien crear los nuevos componentes sin modificar los anteriores ya que sino estaríamos afectando la vista vieja.
+Este archivo no se debe modificar automaticamente, solo en caso que se lo explicite.
+
+
+Nuestro proyecto es una aplicacion de escritorio hecha con Wails que utiliza React JS y Go.
+Por lo cual en el root del proyecto tenemos los archivos de Wails e inicializadores de go y luego se separa en la carpeta de backend y frontend, donde en el front se utiliza Vite. Tengamos en cuenta esta estructura de carpetas para las instalaciones que debamos hacer.
+
+Fase 0: Preparación del Proyecto (2 días)
+1. Instalación y configuración inicial:
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npm install @shadcn/ui @radix-ui/react-icons class-variance-authority clsx tailwind-merge
+```
+
+2. Estructura de carpetas actualizada:
+
+src/
+  ├── views/
+  │   ├── current/          # Vistas actuales con Ant Design
+  │   │   ├── OperationSchema/
+  │   │   ├── OperationTemplate/
+  │   │   └── ...
+  │   ├── new/             # Nuevas vistas con Shadcn
+  │   │   ├── OperationSchema/
+  │   │   ├── OperationTemplate/
+  │   │   └── ...
+  │   └── index.js         # Archivo de rutas
+  ├── components/
+  │   ├── ui/              # Componentes Shadcn
+  │   └── shared/          # Componentes compartidos
+
+3. Configuración del sistema de rutas:
+```javascript
+const routes = {
+  operationSchema: {
+    current: '/operation-schema',
+    new: '/operation-schema-new'
+  },
+  operationTemplate: {
+    current: '/operation-template',
+    new: '/operation-template-new'
+  },
+  // ... resto de rutas
+}
+```
+
+Fase 1: Operation Schema (5-6 días)
+1. Día 1-2: Componentes Base
+   [✓] Configuración inicial de Shadcn/ui y Tailwind
+   [✓] Estructura base de la vista
+   [✓] Migración de RequestForm:
+       - [✓] Crear nuevo componente RequestForm.tsx
+       - [✓] Implementar campos básicos (method_type, url, name)
+       - [✓] Migrar Select de método HTTP a Shadcn Select
+       - [✓] Implementar Input para URL con validación
+       - [✓] Agregar soporte para nombre editable
+
+2. Día 3: Componentes de Edición
+   [ ] Migración de EditableTable:
+       - Crear nuevo componente EditableTable.tsx usando Shadcn Table
+       - Implementar funcionalidad CRUD para headers
+       - Implementar funcionalidad CRUD para query params
+       - Agregar soporte para drag and drop de filas
+       - Implementar validación de campos
+
+3. Día 4: Componentes Avanzados
+   [ ] Migración de CurlModal:
+       - Crear nuevo componente CurlModal.tsx
+       - Implementar Dialog de Shadcn
+       - Migrar TextArea para input de CURL
+       - Implementar parser de CURL mejorado
+       - Agregar validación y feedback de errores
+
+4. Día 5: Integración y Testing
+   [ ] Integración de componentes:
+       - Unificar RequestForm con EditableTable
+       - Implementar sistema de tabs mejorado
+       - Agregar soporte para JSON Schema
+       - Implementar validación global
+
+5. Día 6: Finalización y Switch
+   [ ] Testing final y documentación:
+       - Pruebas de integración
+       - Pruebas de rendimiento
+       - Documentación de componentes
+   [ ] Switch de rutas:
+       - Implementar feature flag
+       - Realizar switch gradual
+       - Monitorear errores
+
+Fase 2: Operation Template (6-7 días)
+1. Día 1-2: Componentes Base
+   [ ] Migración de TemplateForm:
+       - Crear nuevo componente TemplateForm.tsx
+       - Implementar campos base
+       - Migrar sistema de parámetros
+       - Implementar nuevo diseño de UI
+
+2. Día 3-4: Componentes de Parametrización
+   [ ] Migración de ParameterizedEditableTable:
+       - Crear nuevo componente
+       - Implementar sistema de parámetros mejorado
+       - Agregar soporte para tipos de parámetros
+       - Implementar validación específica
+
+3. Día 5: Componentes de Configuración
+   [ ] Migración de configuración de template:
+       - Implementar nuevo modal de configuración
+       - Migrar opciones de concurrencia
+       - Migrar tipos de ejecución
+       - Agregar nuevas opciones de configuración
+
+4. Día 6-7: Integración y Switch
+   [ ] Testing y documentación
+   [ ] Switch gradual a nueva implementación
+
+Fase 3: Process (6-7 días)
+1. Día 1-2: Vista Principal
+   [ ] Migración de ProcessView:
+       - Crear nueva estructura
+       - Implementar grid system
+       - Migrar controles principales
+
+2. Día 3-4: Componentes de Proceso
+   [ ] Migración de componentes específicos:
+       - Crear nuevos componentes de proceso
+       - Implementar nuevo sistema de estados
+       - Migrar sistema de logs
+
+3. Día 5-7: Integración y Testing
+   [ ] Testing completo
+   [ ] Switch gradual
+
+Fase 4: Process Result (5-6 días)
+1. Día 1-2: Vista de Resultados
+   [ ] Migración de ProcessResultView:
+       - Implementar nueva estructura
+       - Migrar sistema de visualización
+       - Crear componentes de resultado
+
+2. Día 3-4: Componentes de Visualización
+   [ ] Migración de visualizadores:
+       - Implementar nuevo JSON viewer
+       - Crear sistema de filtros
+       - Migrar sistema de exportación
+
+3. Día 5-6: Finalización
+   [ ] Testing y documentación
+   [ ] Switch gradual
+
+Fase 5: Flow (7-8 días)
+1. Día 1-2: Componentes Base
+   [ ] Migración de FlowView:
+       - Crear nueva estructura
+       - Implementar sistema de nodos
+       - Migrar controles de flujo
+
+2. Día 3-4: Componentes de Nodos
+   [ ] Migración de TemplateNode:
+       - Crear nuevo componente
+       - Implementar sistema de configuración
+       - Migrar sistema de parámetros
+
+3. Día 5-6: Componentes de Respuesta
+   [ ] Migración de ResponsePanel:
+       - Crear nuevo componente
+       - Implementar sistema de campos
+       - Migrar sistema de selección
+
+4. Día 7-8: Integración y Switch
+   [ ] Testing completo
+   [ ] Switch gradual
+
+Estado Actual del Plan:
+1. Operation Schema (Fase actual)
+   [✓] Configuración inicial de Shadcn/ui y Tailwind
+   [✓] Estructura base de la vista
+   [✓] Migración de RequestForm
+      [✓] Componente básico implementado con Shadcn/UI
+      [✓] Implementados selects, inputs y textareas
+      [✓] Implementado sistema de tabs
+
+2. Operation Template (Pendiente)
+3. Process (Pendiente)
+4. Process Result (Pendiente)
+5. Flow (Pendiente)
+
+Próximos Pasos Inmediatos:
+1. Implementar EditableTable:
+   - Diseñar estructura del componente
+   - Implementar Table base de Shadcn
+   - Agregar funcionalidad de edición
+   - Implementar sistema de validación
+
+2. Configurar CurlModal:
+   - Crear estructura del modal
+   - Implementar Dialog de Shadcn
+   - Migrar sistema de parsing
+   - Agregar validación mejorada
