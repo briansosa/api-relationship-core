@@ -150,13 +150,6 @@ frontend/
 │   │   │   ├── Sidebar/
 │   │   │   ├── JsonViewer/
 │   │   │   └── Loading/
-│   │   └── features/            # Componentes específicos de feature
-│   │       ├── schema/
-│   │       │   ├── SchemaEditor/
-│   │       │   └── SchemaList/
-│   │       └── template/
-│   │           ├── TemplateEditor/
-│   │           └── TemplateList/
 │   ├── hooks/
 │   │   ├── common/              # Hooks genéricos
 │   │   └── features/            # Hooks específicos de feature
@@ -333,120 +326,118 @@ interface TemplateStore {
 ## 2. Migración de Componentes
 
 ### 2.1 Componentes Base
-- [ ] Crear estructura de carpetas para nuevos componentes
-- [ ] Configurar tipos compartidos
-- [ ] Implementar HOCs necesarios
-- [ ] Crear hooks compartidos
+- [X] Crear estructura de carpetas para nuevos componentes
+- [X] Configurar tipos compartidos
+- [X] Implementar HOCs necesarios
+- [X] Crear hooks compartidos
 
 ### 2.2 OperationEditor
-- [ ] Migrar validaciones de formulario
-- [ ] Implementar integración con schemaStore
-- [ ] Migrar lógica de test request
-- [ ] Implementar manejo de errores
-- [ ] Agregar feedback visual
-- [ ] Implementar auto-guardado (opcional)
+1- [X] Migrar validaciones de formulario
+2- [X] Implementar integración con schemaStore
+3- [ ] Migrar lógica de test request
+4- [ ] Implementar manejo de errores
+5- [ ] Agregar feedback visual
 
 ### 2.3 TemplateEditor
-- [ ] Migrar sistema de parámetros
-- [ ] Implementar integración con templateStore
-- [ ] Migrar sincronización con schema
-- [ ] Implementar validaciones
-- [ ] Agregar preview de template
-- [ ] Implementar historial de cambios (opcional)
+1- [ ] Implementar integración con templateStore
+2- [ ] Migrar sincronización con schema
+3- [ ] Implementar validaciones
+4- [ ] Agregar preview de template
+5- [ ] Implementar historial de cambios (opcional)
 
 ### 2.4 ResponseViewer
-- [ ] Migrar visualización de JSON
-- [ ] Implementar transformación de datos
-- [ ] Agregar opciones de formato
-- [ ] Implementar búsqueda en JSON
-- [ ] Agregar exportación de resultados
+1- [ ] Migrar visualización de JSON
+2- [ ] Implementar transformación de datos
+3- [ ] Agregar opciones de formato
+4- [ ] Implementar búsqueda en JSON
+5- [ ] Agregar exportación de resultados
 
 ## 3. Implementación de Funcionalidades
 
 ### 3.1 Schemas
-- [ ] Implementar listado y búsqueda
-  - [ ] Filtrado
-  - [ ] Ordenamiento
-  - [ ] Paginación
-- [ ] Implementar CRUD
-  - [ ] Crear nuevo schema
-  - [ ] Editar schema existente
-  - [ ] Eliminar schema
-  - [ ] Duplicar schema
-- [ ] Implementar testing
-  - [ ] Test request
-  - [ ] Validación de respuesta
-  - [ ] Manejo de timeouts
-- [ ] Implementar importación
-  - [ ] Desde CURL
-  - [ ] Desde archivo
-  - [ ] Desde clipboard
+1- [ ] Implementar listado y búsqueda
+  1- [ ] Filtrado
+  2- [ ] Ordenamiento
+  3- [ ] Paginación
+2- [ ] Implementar CRUD
+  1- [ ] Crear nuevo schema
+  2- [ ] Editar schema existente
+  3- [ ] Eliminar schema
+  4- [ ] Duplicar schema
+3- [ ] Implementar testing
+  1- [ ] Test request
+  2- [ ] Validación de respuesta
+  3- [ ] Manejo de timeouts
+4- [ ] Implementar importación
+  1- [ ] Desde CURL
+  2- [ ] Desde archivo
+  3- [ ] Desde clipboard
 
 ### 3.2 Templates
-- [ ] Implementar gestión de templates
-  - [ ] Listado por schema
-  - [ ] Búsqueda y filtrado
-  - [ ] Ordenamiento
-- [ ] Implementar CRUD
-  - [ ] Crear template
-  - [ ] Editar template
-  - [ ] Eliminar template
-  - [ ] Duplicar template
-- [ ] Implementar parámetros
-  - [ ] Validación
-  - [ ] Tipos dinámicos
-  - [ ] Valores por defecto
-- [ ] Implementar sincronización
-  - [ ] Con schema padre
-  - [ ] Entre templates
-  - [ ] Historial de cambios
+1- [ ] Implementar gestión de templates
+  1- [ ] Listado por schema
+  2- [ ] Búsqueda y filtrado
+  3- [ ] Ordenamiento
+2- [ ] Implementar CRUD
+  1- [ ] Crear template
+  2- [ ] Editar template
+  3- [ ] Eliminar template
+  4- [ ] Duplicar template
+3- [ ] Implementar parámetros
+  1- [ ] Validación
+  2- [ ] Tipos dinámicos
+  3- [ ] Valores por defecto
+4- [ ] Implementar sincronización
+  1- [ ] Con schema padre
+  2- [ ] Entre templates
+  3- [ ] Historial de cambios
 
 ### 3.3 Funcionalidades Compartidas
-- [ ] Sistema de notificaciones
-  - [ ] Errores
-  - [ ] Éxitos
-  - [ ] Advertencias
-  - [ ] Progreso
-- [ ] Loading states
-  - [ ] Skeletons
-  - [ ] Spinners
-  - [ ] Progress bars
-- [ ] Modales y diálogos
-  - [ ] Confirmaciones
-  - [ ] Forms modales
-  - [ ] Previews
+1- [ ] Sistema de notificaciones
+  1- [ ] Errores
+  2- [ ] Éxitos
+  3- [ ] Advertencias
+  4- [ ] Progreso
+2- [ ] Loading states
+  1- [ ] Skeletons
+  2- [ ] Spinners
+  3- [ ] Progress bars
+3- [ ] Modales y diálogos
+  1- [ ] Confirmaciones
+  2- [ ] Forms modales
+  3- [ ] Previews
 
 ## 4. Testing y Optimización
 
 ### 4.1 Optimización
-- [ ] Performance
-  - [ ] Lazy loading
-  - [ ] Code splitting
-  - [ ] Bundle size
-- [ ] Renders
-  - [ ] Memoización
-  - [ ] Virtualización
-  - [ ] Debouncing
-- [ ] Network
-  - [ ] Caching
-  - [ ] Optimistic updates
-  - [ ] Request batching
+1- [ ] Performance
+  1- [ ] Lazy loading
+  2- [ ] Code splitting
+  3- [ ] Bundle size
+2- [ ] Renders
+  1- [ ] Memoización
+  2- [ ] Virtualización
+  3- [ ] Debouncing
+3- [ ] Network
+  1- [ ] Caching
+  2- [ ] Optimistic updates
+  3- [ ] Request batching
 
 ## 5. Limpieza y Documentación
 
 ### 5.1 Limpieza
-- [ ] Código legacy
-  - [ ] Remover componentes antiguos
-  - [ ] Limpiar imports no usados
-  - [ ] Actualizar dependencias
-- [ ] Tipos
-  - [ ] Remover tipos duplicados
-  - [ ] Consolidar interfaces
-  - [ ] Actualizar tipos obsoletos
-- [ ] Estilos
-  - [ ] Remover CSS no usado
-  - [ ] Consolidar utilidades
-  - [ ] Actualizar temas
+1- [ ] Código legacy
+  1- [ ] Remover componentes antiguos
+  2- [ ] Limpiar imports no usados
+  3- [ ] Actualizar dependencias
+2- [ ] Tipos
+  1- [ ] Remover tipos duplicados
+  2- [ ] Consolidar interfaces
+  3- [ ] Actualizar tipos obsoletos
+3- [ ] Estilos
+  1- [ ] Remover CSS no usado
+  2- [ ] Consolidar utilidades
+  3- [ ] Actualizar temas
 
 ## Criterios de Aceptación
 

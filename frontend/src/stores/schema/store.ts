@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { Schema, SchemaCreate, SchemaStore, SchemaUpdate } from '@/types/schema'
+import { Schema, SchemaCreate, SchemaFilter, SchemaStore, SchemaUpdate, SortField, SortOrder } from '@/types/schema'
 import {
   GetAllOperationSchema,
   UpdateOperationSchema,
@@ -18,6 +18,75 @@ export const useSchemaStore = create<SchemaStore>()(
     selectedSchema: null,
     loading: false,
     error: null,
+    filter: {},
+    sortField: 'name',
+    sortOrder: 'asc',
+
+    // Filtrado y ordenamiento
+    setFilter: (filter: Partial<SchemaFilter>) => {
+      set(state => {
+        state.filter = { ...state.filter, ...filter }
+      })
+    },
+
+    clearFilter: () => {
+      set({ filter: {} })
+    },
+
+    setSorting: (field: SortField, order: SortOrder) => {
+      set({ sortField: field, sortOrder: order })
+    },
+
+    getFilteredSchemas: () => {
+      const { schemas, filter, sortField, sortOrder } = get()
+      
+      // Aplicar filtros
+      let filtered = [...schemas]
+      
+      if (filter.searchQuery) {
+        const query = filter.searchQuery.toLowerCase()
+        filtered = filtered.filter(schema => 
+          schema.name.toLowerCase().includes(query) || 
+          schema.url.toLowerCase().includes(query)
+        )
+      }
+      
+      if (filter.methodType && filter.methodType.length > 0) {
+        filtered = filtered.filter(schema => 
+          filter.methodType!.includes(schema.method_type)
+        )
+      }
+      
+      if (filter.favorite !== undefined) {
+        filtered = filtered.filter(schema => 
+          schema.favorite === filter.favorite
+        )
+      }
+      
+      // Aplicar ordenamiento
+      filtered.sort((a: Schema, b: Schema) => {
+        let comparison = 0
+        
+        switch (sortField) {
+          case 'name':
+            comparison = a.name.localeCompare(b.name)
+            break
+          case 'method_type':
+            comparison = a.method_type.localeCompare(b.method_type)
+            break
+          case 'lastUsed':
+            // Validar que existan valores para lastUsed
+            const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0
+            const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0
+            comparison = dateA - dateB
+            break
+        }
+        
+        return sortOrder === 'asc' ? comparison : -comparison
+      })
+      
+      return filtered
+    },
 
     // Acciones básicas
     fetchSchemas: async () => {
@@ -25,7 +94,15 @@ export const useSchemaStore = create<SchemaStore>()(
       try {
         const wailsSchemas = await GetAllOperationSchema()
         const schemas = wailsSchemas.map(fromWailsSchema)
-        set({ schemas })
+        
+        // Asignar fechas y favoritos por defecto (esto debería venir del backend en una implementación real)
+        const schemasWithDefaults = schemas.map((schema: Schema) => ({
+          ...schema,
+          favorite: schema.favorite || false,
+          lastUsed: schema.lastUsed || new Date().toISOString()
+        }))
+        
+        set({ schemas: schemasWithDefaults })
       } catch (error) {
         set({ error: error as Error })
       } finally {
@@ -34,8 +111,35 @@ export const useSchemaStore = create<SchemaStore>()(
     },
 
     selectSchema: (id: string) => {
+      // Verificar si el schema ya está seleccionado para evitar actualizaciones innecesarias
+      if (get().selectedSchema?.id === id) {
+        return; // Salir para evitar actualizaciones redundantes
+      }
+      
       const schema = get().schemas.find(s => s.id === id)
-      set({ selectedSchema: schema || null })
+      if (schema) {
+        // Actualizar lastUsed cuando se selecciona un schema
+        const lastUsed = new Date().toISOString();
+        const updatedSchema = {
+          ...schema,
+          lastUsed
+        }
+        
+        // Actualizar en el estado
+        set(state => {
+          const index = state.schemas.findIndex(s => s.id === id)
+          if (index !== -1) {
+            // Solo actualizar lastUsed, no todo el schema
+            state.schemas[index] = {
+              ...state.schemas[index],
+              lastUsed
+            }
+            state.selectedSchema = updatedSchema
+          }
+        })
+      } else {
+        set({ selectedSchema: null })
+      }
     },
 
     clearSelection: () => {
@@ -48,8 +152,16 @@ export const useSchemaStore = create<SchemaStore>()(
       try {
         const wailsSchema = await InsertOperationSchema(toWailsSchema(schema))
         const newSchema = fromWailsSchema(wailsSchema)
+        
+        // Agregar propiedades adicionales
+        const schemaWithDefaults = {
+          ...newSchema,
+          favorite: schema.favorite || false,
+          lastUsed: new Date().toISOString()
+        }
+        
         set(state => {
-          state.schemas.push(newSchema)
+          state.schemas.push(schemaWithDefaults)
         })
       } catch (error) {
         set({ error: error as Error })
@@ -64,10 +176,25 @@ export const useSchemaStore = create<SchemaStore>()(
       try {
         const wailsSchema = await UpdateOperationSchema(toWailsSchema({ id, ...schema }))
         const updatedSchema = fromWailsSchema(wailsSchema)
+        
+        // Mantener propiedades adicionales
+        const existingSchema = get().schemas.find(s => s.id === id)
+        const schemaWithDefaults = {
+          ...updatedSchema,
+          favorite: schema.favorite !== undefined ? schema.favorite : (existingSchema?.favorite || false),
+          lastUsed: schema.lastUsed || existingSchema?.lastUsed || new Date().toISOString()
+        }
+        
         set(state => {
           const index = state.schemas.findIndex(s => s.id === id)
           if (index !== -1) {
-            state.schemas[index] = updatedSchema
+            state.schemas[index] = schemaWithDefaults
+            
+            // Actualizar también el schema seleccionado si es el mismo
+            // Importante: creamos un nuevo objeto para evitar ciclos de referencia
+            if (state.selectedSchema?.id === id) {
+              state.selectedSchema = {...schemaWithDefaults}
+            }
           }
         })
       } catch (error) {
@@ -95,12 +222,50 @@ export const useSchemaStore = create<SchemaStore>()(
         set({ loading: false })
       }
     },
+    
+    toggleFavorite: async (id: string) => {
+      const schema = get().schemas.find(s => s.id === id)
+      if (!schema) return
+
+      const updatedSchema = {
+        ...schema,
+        favorite: !schema.favorite
+      }
+      
+      // En una implementación real, aquí se haría una llamada a la API para 
+      // actualizar el estado de favorito en el backend
+      set(state => {
+        const index = state.schemas.findIndex(s => s.id === id)
+        if (index !== -1) {
+          state.schemas[index] = updatedSchema
+          
+          if (state.selectedSchema?.id === id) {
+            state.selectedSchema = updatedSchema
+          }
+        }
+      })
+    },
 
     // Operaciones especiales
     testOperation: async (data: Schema) => {
       set({ loading: true, error: null })
       try {
         const response = await TestRequest(toWailsSchema(data))
+        
+        // Actualizar lastUsed cuando se ejecuta una operación
+        const schema = get().schemas.find(s => s.id === data.id)
+        if (schema) {
+          set(state => {
+            const index = state.schemas.findIndex(s => s.id === data.id)
+            if (index !== -1) {
+              state.schemas[index] = {
+                ...state.schemas[index],
+                lastUsed: new Date().toISOString()
+              }
+            }
+          })
+        }
+        
         return response
       } catch (error) {
         set({ error: error as Error })

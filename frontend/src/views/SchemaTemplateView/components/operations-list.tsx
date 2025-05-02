@@ -1,9 +1,11 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { PlayCircle, Star, Trash2, FileCode, ChevronRight, ChevronDown } from "lucide-react"
+import { PlayCircle, Star, Trash2, FileCode, ChevronRight, ChevronDown, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { Schema } from "@/types/schema"
+import { useSchemaStore } from "@/stores/schema/store"
 
 interface OperationsListProps {
   selectedOperation: string | null
@@ -12,69 +14,9 @@ interface OperationsListProps {
   viewMode: "schemas" | "templates"
   selectedTemplate: string | null
   onSelectTemplate: (id: string | null) => void
+  loading?: boolean
+  schemas?: Schema[]
 }
-
-// Datos de ejemplo para schemas
-const operations = [
-  {
-    id: "1",
-    name: "Post",
-    method: "POST",
-    favorite: true,
-    lastUsed: "2024-05-01T10:30:00Z",
-    templates: [
-      { id: "1-1", name: "Post con ID" },
-      { id: "1-2", name: "Post con datos personalizados" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Ubicación",
-    method: "GET",
-    favorite: false,
-    lastUsed: "2024-04-29T14:20:00Z",
-    templates: [{ id: "2-1", name: "Ubicación por coordenadas" }],
-  },
-  {
-    id: "3",
-    name: "Locacion",
-    method: "GET",
-    favorite: true,
-    lastUsed: "2024-05-01T09:15:00Z",
-    templates: [
-      { id: "3-1", name: "Locación por lat/lon" },
-      { id: "3-2", name: "Locación por dirección" },
-      { id: "3-3", name: "Locación por código postal" },
-    ],
-  },
-  {
-    id: "4",
-    name: "Json test post by user",
-    method: "GET",
-    favorite: false,
-    lastUsed: "2024-04-28T11:45:00Z",
-    templates: [],
-  },
-  {
-    id: "5",
-    name: "Actualizar usuario",
-    method: "PUT",
-    favorite: false,
-    lastUsed: "2024-04-27T16:30:00Z",
-    templates: [
-      { id: "5-1", name: "Actualizar nombre" },
-      { id: "5-2", name: "Actualizar email" },
-    ],
-  },
-  {
-    id: "6",
-    name: "Eliminar registro",
-    method: "DELETE",
-    favorite: false,
-    lastUsed: "2024-04-26T13:10:00Z",
-    templates: [],
-  },
-]
 
 export function OperationsList({
   selectedOperation,
@@ -83,13 +25,16 @@ export function OperationsList({
   viewMode,
   selectedTemplate,
   onSelectTemplate,
+  loading = false,
+  schemas = []
 }: OperationsListProps) {
-  const [expandedOperations, setExpandedOperations] = useState<Record<string, boolean>>({
-    "1": true,
-    "3": true,
-  })
+  const [expandedOperations, setExpandedOperations] = useState<Record<string, boolean>>({})
+  const { toggleFavorite, testOperation } = useSchemaStore()
 
-  const filteredOperations = operations.filter((op) => op.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Filtrar schemas por nombre según la búsqueda
+  const filteredSchemas = schemas.filter((schema) => 
+    schema.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const getMethodColor = (method: string) => {
     switch (method) {
@@ -112,25 +57,63 @@ export function OperationsList({
       [id]: !prev[id],
     }))
   }
+  
+  const handleToggleFavorite = (e: React.MouseEvent, schemaId: string) => {
+    e.stopPropagation()
+    toggleFavorite(schemaId)
+  }
+  
+  const handleTestOperation = (e: React.MouseEvent, schema: Schema) => {
+    e.stopPropagation()
+    testOperation(schema)
+  }
+
+  // Mostrar spinner mientras se cargan los datos
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-sm text-muted-foreground">Cargando operaciones...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Mostrar mensaje cuando no hay resultados
+  if (filteredSchemas.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
+            {schemas.length === 0 
+              ? "No hay operaciones disponibles" 
+              : "No se encontraron operaciones que coincidan con la búsqueda"}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-3 space-y-2">
-      {filteredOperations.map((operation) => (
-        <div key={operation.id} className="space-y-1">
+      {filteredSchemas.map((schema) => (
+        <div key={schema.id} className="space-y-1">
           <Card
             className={cn(
               "p-3 cursor-pointer transition-all border hover:shadow-sm",
-              selectedOperation === operation.id && viewMode === "schemas"
+              selectedOperation === schema.id && viewMode === "schemas"
                 ? "border-primary/50 bg-primary/5"
                 : "hover:border-muted-foreground/20",
             )}
             onClick={() => {
-              onSelectOperation(operation.id)
+              onSelectOperation(schema.id)
               if (viewMode === "templates") {
-                if (operation.templates.length > 0) {
+                const hasTemplates = schema.templates_id && schema.templates_id.length > 0
+                if (hasTemplates) {
                   setExpandedOperations((prev) => ({
                     ...prev,
-                    [operation.id]: true,
+                    [schema.id]: true,
                   }))
                 } else {
                   onSelectTemplate(null)
@@ -139,8 +122,8 @@ export function OperationsList({
             }}
           >
             <div className="flex items-center justify-between mb-1">
-              <Badge variant="outline" className={cn("font-mono text-xs px-2 py-0", getMethodColor(operation.method))}>
-                {operation.method}
+              <Badge variant="outline" className={cn("font-mono text-xs px-2 py-0", getMethodColor(schema.method_type))}>
+                {schema.method_type}
               </Badge>
               <div className="flex gap-1">
                 {viewMode === "schemas" ? (
@@ -149,10 +132,7 @@ export function OperationsList({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-muted-foreground hover:text-primary"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        // Lógica para ejecutar
-                      }}
+                      onClick={(e) => handleTestOperation(e, schema)}
                     >
                       <PlayCircle className="h-4 w-4" />
                     </Button>
@@ -160,15 +140,12 @@ export function OperationsList({
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "h-6 w-6",
-                        operation.favorite ? "text-amber-500" : "text-muted-foreground hover:text-amber-500",
+                        "h-6 w-6", 
+                        schema.favorite ? "text-amber-500" : "text-muted-foreground hover:text-amber-500"
                       )}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        // Lógica para marcar como favorito
-                      }}
+                      onClick={(e) => handleToggleFavorite(e, schema.id)}
                     >
-                      <Star className="h-4 w-4" fill={operation.favorite ? "currentColor" : "none"} />
+                      <Star className="h-4 w-4" fill={schema.favorite ? "currentColor" : "none"} />
                     </Button>
                     <Button
                       variant="ghost"
@@ -183,17 +160,17 @@ export function OperationsList({
                     </Button>
                   </>
                 ) : (
-                  operation.templates.length > 0 && (
+                  schema.templates_id && schema.templates_id.length > 0 && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-muted-foreground"
                       onClick={(e) => {
                         e.stopPropagation()
-                        toggleExpand(operation.id)
+                        toggleExpand(schema.id)
                       }}
                     >
-                      {expandedOperations[operation.id] ? (
+                      {expandedOperations[schema.id] ? (
                         <ChevronDown className="h-4 w-4" />
                       ) : (
                         <ChevronRight className="h-4 w-4" />
@@ -203,40 +180,50 @@ export function OperationsList({
                 )}
               </div>
             </div>
-            <h3 className="font-medium text-sm">{operation.name}</h3>
+            <h3 className="font-medium text-sm">{schema.name}</h3>
             {viewMode === "schemas" && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Última ejecución: {new Date(operation.lastUsed).toLocaleDateString()}
+              <p className="text-xs text-muted-foreground mt-1 flex justify-between">
+                <span>Timeout: {schema.timeout}s</span>
+                {schema.lastUsed && (
+                  <span className="text-xs">
+                    {new Date(schema.lastUsed).toLocaleDateString()}
+                  </span>
+                )}
               </p>
             )}
             {viewMode === "templates" && (
               <p className="text-xs text-muted-foreground mt-1">
-                {operation.templates.length} {operation.templates.length === 1 ? "template" : "templates"}
+                {schema.templates_id?.length || 0} 
+                {!schema.templates_id || schema.templates_id.length === 1 ? " template" : " templates"}
               </p>
             )}
           </Card>
 
-          {/* Templates list */}
-          {viewMode === "templates" && expandedOperations[operation.id] && operation.templates.length > 0 && (
+          {/* Templates list - Esto necesitará integrarse con el store de templates */}
+          {viewMode === "templates" && 
+           expandedOperations[schema.id] && 
+           schema.templates_id && 
+           schema.templates_id.length > 0 && (
             <div className="pl-4 border-l ml-3 space-y-1">
-              {operation.templates.map((template) => (
+              {/* Aquí necesitaremos obtener los detalles de los templates */}
+              {schema.templates_id.map((templateId) => (
                 <Card
-                  key={template.id}
+                  key={templateId}
                   className={cn(
                     "p-2 cursor-pointer transition-all border hover:shadow-sm",
-                    selectedTemplate === template.id && selectedOperation === operation.id
+                    selectedTemplate === templateId && selectedOperation === schema.id
                       ? "border-primary/50 bg-primary/5"
                       : "hover:border-muted-foreground/20",
                   )}
                   onClick={() => {
-                    onSelectOperation(operation.id)
-                    onSelectTemplate(template.id)
+                    onSelectOperation(schema.id)
+                    onSelectTemplate(templateId)
                   }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileCode className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{template.name}</span>
+                      <span className="text-sm">Template {templateId.substring(0, 6)}</span>
                     </div>
                     <div className="flex gap-1">
                       <Button
@@ -248,7 +235,7 @@ export function OperationsList({
                           // Lógica para ejecutar template
                         }}
                       >
-                        <PlayCircle className="h-3 w-3" />
+                        <PlayCircle className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -259,7 +246,7 @@ export function OperationsList({
                           // Lógica para eliminar template
                         }}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -269,9 +256,6 @@ export function OperationsList({
           )}
         </div>
       ))}
-      {filteredOperations.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">No se encontraron operaciones</div>
-      )}
     </div>
   )
 }

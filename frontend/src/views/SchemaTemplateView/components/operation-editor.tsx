@@ -1,43 +1,229 @@
-import { useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { PlayCircle, Save, Copy, AlertCircle, Check, Info, Trash2 } from "lucide-react"
+import { PlayCircle, Save, Copy, AlertCircle, Check, Info, Trash2, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useSchemaStore } from "@/stores/schema/store"
+import { Schema, SchemaUpdate } from "@/types/schema"
 
 interface OperationEditorProps {
   operationId: string
 }
 
 export function OperationEditor({ operationId }: OperationEditorProps) {
+  // Estado local para manejo de la UI
   const [activeTab, setActiveTab] = useState("body")
-  const [method, setMethod] = useState("GET")
-  const [url, setUrl] = useState("https://apis.datos.gob.ar/georef/api/ubicacion")
-  const [queryParams, setQueryParams] = useState([
-    { key: "lat", value: "-34.610016" },
-    { key: "lon", value: "-58.467947" },
-  ])
+  const [localSchema, setLocalSchema] = useState<Schema | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
+  const [newHeaderKey, setNewHeaderKey] = useState("")
+  const [newHeaderValue, setNewHeaderValue] = useState("")
+  const [newParamKey, setNewParamKey] = useState("")
+  const [newParamValue, setNewParamValue] = useState("")
+  
+  // Ref para evitar actualizaciones repetidas
+  const initializedRef = useRef(false)
+  const selectedIdRef = useRef<string | null>(null)
+
+  // Acceso al store global
+  const { 
+    schemas, 
+    selectedSchema, 
+    loading,
+    selectSchema, 
+    updateSchema, 
+    testOperation,
+    transformJsonSchema
+  } = useSchemaStore()
+
+  // Cargar el schema cuando cambie el operationId
+  useEffect(() => {
+    if (operationId && schemas.length > 0 && operationId !== selectedIdRef.current) {
+      selectedIdRef.current = operationId
+      selectSchema(operationId)
+    }
+  }, [operationId, schemas, selectSchema])
+
+  // Sincronizar estado local con el schema seleccionado
+  useEffect(() => {
+    if (selectedSchema && !initializedRef.current) {
+      setLocalSchema(selectedSchema)
+      initializedRef.current = true
+    }
+  }, [selectedSchema])
+
+  // Manejar cambios en los campos
+  const handleFieldChange = (field: keyof Schema, value: any) => {
+    if (!localSchema) return
+    
+    setLocalSchema({
+      ...localSchema,
+      [field]: value
+    })
+  }
+
+  // Actualizar headers
+  const handleAddHeader = () => {
+    if (!newHeaderKey || !localSchema) return
+    
+    const updatedHeaders = { 
+      ...(localSchema.headers || {}), 
+      [newHeaderKey]: newHeaderValue 
+    }
+    
+    setLocalSchema({
+      ...localSchema,
+      headers: updatedHeaders
+    })
+    
+    setNewHeaderKey("")
+    setNewHeaderValue("")
+  }
+
+  const handleRemoveHeader = (key: string) => {
+    if (!localSchema || !localSchema.headers) return
+    
+    const updatedHeaders = { ...localSchema.headers }
+    delete updatedHeaders[key]
+    
+    setLocalSchema({
+      ...localSchema,
+      headers: updatedHeaders
+    })
+  }
+
+  // Actualizar query params
+  const handleAddQueryParam = () => {
+    if (!newParamKey || !localSchema) return
+    
+    const updatedParams = { 
+      ...(localSchema.query_params || {}), 
+      [newParamKey]: newParamValue 
+    }
+    
+    setLocalSchema({
+      ...localSchema,
+      query_params: updatedParams
+    })
+    
+    setNewParamKey("")
+    setNewParamValue("")
+  }
+
+  const handleRemoveQueryParam = (key: string) => {
+    if (!localSchema || !localSchema.query_params) return
+    
+    const updatedParams = { ...localSchema.query_params }
+    delete updatedParams[key]
+    
+    setLocalSchema({
+      ...localSchema,
+      query_params: updatedParams
+    })
+  }
+
+  // Guardar cambios
+  const handleSaveSchema = async () => {
+    if (!localSchema) return
+    
+    setIsSaving(true)
+    try {
+      const schemaUpdate: SchemaUpdate = {
+        name: localSchema.name,
+        method_type: localSchema.method_type,
+        url: localSchema.url,
+        timeout: localSchema.timeout,
+        request_type: localSchema.request_type,
+        headers: localSchema.headers,
+        body: localSchema.body,
+        query_params: localSchema.query_params
+      }
+      
+      await updateSchema(localSchema.id, schemaUpdate)
+      // Reiniciamos el ref para permitir actualizaciones futuras
+      initializedRef.current = false
+      console.log("Schema actualizado correctamente")
+    } catch (error) {
+      console.error("Error al guardar", error instanceof Error ? error.message : "Error desconocido")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Probar operación
+  const handleTestOperation = async () => {
+    if (!localSchema) return
+    
+    setIsTesting(true)
+    try {
+      const response = await testOperation(localSchema)
+      
+      // Actualizar el schema local con la respuesta
+      setLocalSchema({
+        ...localSchema,
+        response
+      })
+      
+      console.log("Operación ejecutada correctamente")
+    } catch (error) {
+      console.error("Error en la operación", error instanceof Error ? error.message : "Error desconocido")
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
+  // Generar schema a partir de la respuesta
+  const handleGenerateSchema = () => {
+    if (!localSchema || !localSchema.response) return
+    
+    const schema = transformJsonSchema(localSchema.response)
+    setLocalSchema({
+      ...localSchema,
+      schema
+    })
+    
+    console.log("Schema generado correctamente")
+  }
 
   // Construir la URL con parámetros para la vista previa
-  const previewUrl = () => {
+  const getPreviewUrl = () => {
+    if (!localSchema || !localSchema.url) return ""
+    
     try {
-      const baseUrl = new URL(url)
-      queryParams.forEach((param) => {
-        if (param.key && param.value) {
-          baseUrl.searchParams.append(param.key, param.value)
-        }
-      })
+      const baseUrl = new URL(localSchema.url)
+      
+      if (localSchema.query_params) {
+        Object.entries(localSchema.query_params).forEach(([key, value]) => {
+          if (key && value) {
+            baseUrl.searchParams.append(key, value)
+          }
+        })
+      }
+      
       return baseUrl.toString()
     } catch (e) {
-      return url
+      return localSchema.url
     }
+  }
+
+  // Si no hay schema seleccionado o está cargando, mostrar estado de carga
+  if (loading || !localSchema) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Cargando operación...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -46,7 +232,10 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
       <div className="p-4 border-b bg-card">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Select value={method} onValueChange={setMethod}>
+            <Select 
+              value={localSchema.method_type} 
+              onValueChange={(value) => handleFieldChange("method_type", value)}
+            >
               <SelectTrigger className="w-28 h-9">
                 <SelectValue placeholder="Método" />
               </SelectTrigger>
@@ -58,7 +247,12 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                 <SelectItem value="PATCH">PATCH</SelectItem>
               </SelectContent>
             </Select>
-            <Input className="w-64 font-medium" placeholder="Nombre de la operación" defaultValue="Locacion" />
+            <Input 
+              className="w-64 font-medium" 
+              placeholder="Nombre de la operación" 
+              value={localSchema.name} 
+              onChange={(e) => handleFieldChange("name", e.target.value)}
+            />
           </div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
@@ -74,12 +268,30 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Button variant="outline" size="sm">
-              <Save className="mr-2 h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSaveSchema} 
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
               Guardar
             </Button>
-            <Button variant="default" size="sm">
-              <PlayCircle className="mr-2 h-4 w-4" />
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleTestOperation}
+              disabled={isTesting}
+            >
+              {isTesting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PlayCircle className="mr-2 h-4 w-4" />
+              )}
               Ejecutar
             </Button>
           </div>
@@ -88,12 +300,15 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
         <div className="space-y-2">
           <div className="flex gap-2">
             <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              value={localSchema.url || ""}
+              onChange={(e) => handleFieldChange("url", e.target.value)}
               className="flex-1"
               placeholder="URL de la operación"
             />
-            <Select defaultValue="30">
+            <Select 
+              value={localSchema.timeout.toString()} 
+              onValueChange={(value) => handleFieldChange("timeout", parseInt(value))}
+            >
               <SelectTrigger className="w-24">
                 <SelectValue placeholder="Timeout" />
               </SelectTrigger>
@@ -107,9 +322,9 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
           </div>
 
           {/* Vista previa de URL */}
-          <Alert variant="outline" className="py-2 bg-muted/50">
+          <Alert variant="default" className="py-2 bg-muted/50">
             <Info className="h-4 w-4" />
-            <AlertDescription className="text-xs font-mono truncate">{previewUrl()}</AlertDescription>
+            <AlertDescription className="text-xs font-mono truncate">{getPreviewUrl()}</AlertDescription>
           </Alert>
         </div>
       </div>
@@ -121,7 +336,6 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
             <TabsTrigger value="body">Body</TabsTrigger>
             <TabsTrigger value="headers">Headers</TabsTrigger>
             <TabsTrigger value="params">Query Params</TabsTrigger>
-            <TabsTrigger value="auth">Auth</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
         </div>
@@ -131,7 +345,10 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
             <TabsContent value="body" className="m-0">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Select defaultValue="json">
+                  <Select 
+                    value={localSchema.request_type} 
+                    onValueChange={(value) => handleFieldChange("request_type", value)}
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Formato" />
                     </SelectTrigger>
@@ -143,10 +360,27 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                     </SelectContent>
                   </Select>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        try {
+                          const formattedBody = localSchema.body 
+                            ? JSON.stringify(JSON.parse(localSchema.body), null, 2) 
+                            : ""
+                          handleFieldChange("body", formattedBody)
+                        } catch (e) {
+                          console.error("Error de formato: JSON no válido")
+                        }
+                      }}
+                    >
                       Formatear
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleFieldChange("body", "")}
+                    >
                       Limpiar
                     </Button>
                   </div>
@@ -154,18 +388,11 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                 <Textarea
                   className="font-mono min-h-[300px]"
                   placeholder="Ingresa el cuerpo de la solicitud aquí..."
-                  defaultValue={
-                    method === "POST"
-                      ? `{
-  "title": "foo",
-  "body": "bar",
-  "userId": 1
-}`
-                      : ""
-                  }
-                  disabled={method === "GET"}
+                  value={localSchema.body || ""}
+                  onChange={(e) => handleFieldChange("body", e.target.value)}
+                  disabled={localSchema.method_type === "GET"}
                 />
-                {method === "GET" && (
+                {localSchema.method_type === "GET" && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
@@ -182,42 +409,109 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                 <Card>
                   <CardContent className="p-4">
                     <div className="space-y-4">
+                      {localSchema.headers && Object.entries(localSchema.headers).map(([key, value], index) => (
+                        <div key={key} className="grid grid-cols-12 gap-4">
+                          <div className="col-span-5">
+                            <Label htmlFor={`header-key-${index}`} className="text-xs mb-1 block">
+                              Nombre
+                            </Label>
+                            <Input id={`header-key-${index}`} value={key} disabled />
+                          </div>
+                          <div className="col-span-6">
+                            <Label htmlFor={`header-value-${index}`} className="text-xs mb-1 block">
+                              Valor
+                            </Label>
+                            <Input 
+                              id={`header-value-${index}`} 
+                              value={value}
+                              onChange={(e) => {
+                                const updatedHeaders = { ...localSchema.headers }
+                                updatedHeaders[key] = e.target.value
+                                handleFieldChange("headers", updatedHeaders)
+                              }} 
+                            />
+                          </div>
+                          <div className="col-span-1 flex items-end">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="text-destructive"
+                              onClick={() => handleRemoveHeader(key)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+
                       <div className="grid grid-cols-12 gap-4">
                         <div className="col-span-5">
-                          <Label htmlFor="header-key-1" className="text-xs mb-1 block">
+                          <Label htmlFor="new-header-key" className="text-xs mb-1 block">
                             Nombre
                           </Label>
-                          <Input id="header-key-1" defaultValue="Content-Type" />
+                          <Input 
+                            id="new-header-key" 
+                            value={newHeaderKey}
+                            onChange={(e) => setNewHeaderKey(e.target.value)}
+                            placeholder="Content-Type" 
+                          />
                         </div>
                         <div className="col-span-6">
-                          <Label htmlFor="header-value-1" className="text-xs mb-1 block">
+                          <Label htmlFor="new-header-value" className="text-xs mb-1 block">
                             Valor
                           </Label>
-                          <Input id="header-value-1" defaultValue="application/json" />
+                          <Input 
+                            id="new-header-value" 
+                            value={newHeaderValue}
+                            onChange={(e) => setNewHeaderValue(e.target.value)}
+                            placeholder="application/json" 
+                          />
                         </div>
                         <div className="col-span-1 flex items-end">
-                          <Button variant="ghost" size="icon" className="text-destructive">
-                            <Trash2 className="h-4 w-4" />
+                          <Button 
+                            variant="default" 
+                            size="icon"
+                            onClick={handleAddHeader}
+                            disabled={!newHeaderKey}
+                          >
+                            <Check className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-
-                      <Button variant="outline" size="sm">
-                        Agregar encabezado
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
 
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="cursor-pointer">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge 
+                    variant="outline" 
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setNewHeaderKey("Accept")
+                      setNewHeaderValue("application/json")
+                    }}
+                  >
                     Accept: application/json
                   </Badge>
-                  <Badge variant="outline" className="cursor-pointer">
-                    Authorization: Bearer
+                  <Badge 
+                    variant="outline" 
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setNewHeaderKey("Content-Type")
+                      setNewHeaderValue("application/json")
+                    }}
+                  >
+                    Content-Type: application/json
                   </Badge>
-                  <Badge variant="outline" className="cursor-pointer">
-                    Cache-Control: no-cache
+                  <Badge 
+                    variant="outline" 
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setNewHeaderKey("Authorization")
+                      setNewHeaderValue("Bearer ")
+                    }}
+                  >
+                    Authorization: Bearer
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -231,45 +525,34 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                 <Card>
                   <CardContent className="p-4">
                     <div className="space-y-4">
-                      {queryParams.map((param, index) => (
-                        <div key={index} className="grid grid-cols-12 gap-4">
+                      {localSchema.query_params && Object.entries(localSchema.query_params).map(([key, value], index) => (
+                        <div key={key} className="grid grid-cols-12 gap-4">
                           <div className="col-span-5">
                             <Label htmlFor={`param-key-${index}`} className="text-xs mb-1 block">
                               Nombre
                             </Label>
-                            <Input
-                              id={`param-key-${index}`}
-                              value={param.key}
-                              onChange={(e) => {
-                                const newParams = [...queryParams]
-                                newParams[index].key = e.target.value
-                                setQueryParams(newParams)
-                              }}
-                            />
+                            <Input id={`param-key-${index}`} value={key} disabled />
                           </div>
                           <div className="col-span-6">
                             <Label htmlFor={`param-value-${index}`} className="text-xs mb-1 block">
                               Valor
                             </Label>
-                            <Input
-                              id={`param-value-${index}`}
-                              value={param.value}
+                            <Input 
+                              id={`param-value-${index}`} 
+                              value={value}
                               onChange={(e) => {
-                                const newParams = [...queryParams]
-                                newParams[index].value = e.target.value
-                                setQueryParams(newParams)
-                              }}
+                                const updatedParams = { ...localSchema.query_params }
+                                updatedParams[key] = e.target.value
+                                handleFieldChange("query_params", updatedParams)
+                              }} 
                             />
                           </div>
                           <div className="col-span-1 flex items-end">
-                            <Button
-                              variant="ghost"
-                              size="icon"
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
                               className="text-destructive"
-                              onClick={() => {
-                                const newParams = queryParams.filter((_, i) => i !== index)
-                                setQueryParams(newParams)
-                              }}
+                              onClick={() => handleRemoveQueryParam(key)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -277,53 +560,39 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                         </div>
                       ))}
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setQueryParams([...queryParams, { key: "", value: "" }])
-                        }}
-                      >
-                        Agregar parámetro
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Alert variant="outline" className="bg-muted/50">
-                  <Check className="h-4 w-4" />
-                  <AlertDescription>
-                    Los parámetros se agregarán automáticamente a la URL al ejecutar la solicitud.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="auth" className="m-0">
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="auth-type">Tipo de autenticación</Label>
-                        <Select defaultValue="none">
-                          <SelectTrigger id="auth-type">
-                            <SelectValue placeholder="Seleccionar tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Sin autenticación</SelectItem>
-                            <SelectItem value="basic">Basic Auth</SelectItem>
-                            <SelectItem value="bearer">Bearer Token</SelectItem>
-                            <SelectItem value="oauth2">OAuth 2.0</SelectItem>
-                            <SelectItem value="apikey">API Key</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="pt-2">
-                        <p className="text-sm text-muted-foreground">
-                          Selecciona un tipo de autenticación para configurar las credenciales.
-                        </p>
+                      <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-5">
+                          <Label htmlFor="new-param-key" className="text-xs mb-1 block">
+                            Nombre
+                          </Label>
+                          <Input 
+                            id="new-param-key" 
+                            value={newParamKey}
+                            onChange={(e) => setNewParamKey(e.target.value)}
+                            placeholder="page" 
+                          />
+                        </div>
+                        <div className="col-span-6">
+                          <Label htmlFor="new-param-value" className="text-xs mb-1 block">
+                            Valor
+                          </Label>
+                          <Input 
+                            id="new-param-value" 
+                            value={newParamValue}
+                            onChange={(e) => setNewParamValue(e.target.value)}
+                            placeholder="1" 
+                          />
+                        </div>
+                        <div className="col-span-1 flex items-end">
+                          <Button 
+                            variant="default" 
+                            size="icon"
+                            onClick={handleAddQueryParam}
+                            disabled={!newParamKey}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -336,35 +605,50 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
                 <Card>
                   <CardContent className="p-4">
                     <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="timeout">Timeout (segundos)</Label>
-                          <Input id="timeout" type="number" defaultValue="30" min="1" max="120" />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="redirect">Seguir redirecciones</Label>
-                          <Select defaultValue="follow">
-                            <SelectTrigger id="redirect">
-                              <SelectValue placeholder="Redirecciones" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="follow">Seguir redirecciones</SelectItem>
-                              <SelectItem value="error">Error en redirección</SelectItem>
-                              <SelectItem value="manual">Manual</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div>
+                        <Label htmlFor="request-type" className="text-sm font-medium mb-1 block">
+                          Tipo de solicitud
+                        </Label>
+                        <Select 
+                          value={localSchema.request_type} 
+                          onValueChange={(value) => handleFieldChange("request_type", value)}
+                        >
+                          <SelectTrigger id="request-type">
+                            <SelectValue placeholder="Tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="json">JSON</SelectItem>
+                            <SelectItem value="xml">XML</SelectItem>
+                            <SelectItem value="form">Form Data</SelectItem>
+                            <SelectItem value="text">Text</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Textarea
-                          id="description"
-                          placeholder="Describe el propósito de esta operación..."
-                          className="min-h-[100px]"
+                      
+                      <div>
+                        <Label htmlFor="timeout" className="text-sm font-medium mb-1 block">
+                          Tiempo de espera (segundos)
+                        </Label>
+                        <Input 
+                          id="timeout" 
+                          type="number" 
+                          value={localSchema.timeout}
+                          onChange={(e) => handleFieldChange("timeout", parseInt(e.target.value))}
+                          min="1"
+                          max="300"
                         />
                       </div>
+                      
+                      {localSchema.response && (
+                        <div>
+                          <Button 
+                            onClick={handleGenerateSchema}
+                            variant="secondary"
+                          >
+                            Generar schema a partir de la respuesta
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

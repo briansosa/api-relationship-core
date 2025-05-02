@@ -1,21 +1,80 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { OperationsList } from "./components/operations-list"
 import { OperationEditor } from "./components/operation-editor"
 import { ResponseViewer } from "./components/response-viewer"
 import { TemplateEditor } from "./components/template-editor"
 import { TemplateParamsPanel } from "./components/template-params-panel"
-import { PlusCircle, Search, X, FileText, FileCode } from "lucide-react"
+import { PlusCircle, Search, X, FileText, FileCode, SortAsc, SortDesc } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { useSchemaStore } from "@/stores/schema/store"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { SortField, SortOrder } from "@/types/schema"
 
 function SchemaTemplateView() {
-  const [selectedOperation, setSelectedOperation] = useState<string | null>("3")
+  const [selectedOperation, setSelectedOperation] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"schemas" | "templates">("schemas")
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  
+  // Acceso al store global
+  const { 
+    loading, 
+    error, 
+    fetchSchemas,
+    filter,
+    setFilter,
+    clearFilter,
+    sortField,
+    sortOrder,
+    setSorting,
+    getFilteredSchemas
+  } = useSchemaStore()
+  
+  // Cargar schemas al iniciar la vista
+  useEffect(() => {
+    // Cargar los schemas cuando se monta el componente
+    fetchSchemas()
+  }, [fetchSchemas])
+  
+  // Actualizar filtro cuando cambie la búsqueda
+  useEffect(() => {
+    setFilter({ searchQuery })
+  }, [searchQuery, setFilter])
+  
+  // Obtener schemas filtrados
+  const filteredSchemas = getFilteredSchemas()
+  
+  // Manejar cambio de ordenamiento
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      // Si es el mismo campo, cambiar el orden
+      setSorting(field, sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Si es un campo diferente, establecer orden ascendente
+      setSorting(field, 'asc')
+    }
+  }
+  
+  // Manejar filtros de favoritos
+  const handleFilterFavorites = () => {
+    if (filter.favorite) {
+      // Si ya está filtrando por favoritos, limpiar el filtro
+      setFilter({ favorite: undefined })
+    } else {
+      // Establecer filtro de favoritos
+      setFilter({ favorite: true })
+    }
+  }
+  
+  // Limpiar todos los filtros
+  const handleClearFilters = () => {
+    clearFilter()
+    setSearchQuery('')
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -77,15 +136,45 @@ function SchemaTemplateView() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left panel - Operations list */}
         <div className="w-72 border-r flex flex-col">
-          <Tabs defaultValue="all" className="w-full">
-            <div className="px-2 pt-2 border-b">
+          <div className="border-b p-2 flex items-center justify-between">
+            <Tabs defaultValue="all" className="w-full">
               <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="all">Todas</TabsTrigger>
-                <TabsTrigger value="favorites">Favoritas</TabsTrigger>
-                <TabsTrigger value="recent">Recientes</TabsTrigger>
+                <TabsTrigger value="all" onClick={handleClearFilters}>Todas</TabsTrigger>
+                <TabsTrigger 
+                  value="favorites" 
+                  onClick={handleFilterFavorites}
+                  data-state={filter.favorite ? "active" : "inactive"}
+                >
+                  Favoritas
+                </TabsTrigger>
+                <TabsTrigger value="recent" onClick={() => {
+                  setSorting('lastUsed', 'desc')
+                }}>
+                  Recientes
+                </TabsTrigger>
               </TabsList>
-            </div>
-          </Tabs>
+            </Tabs>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleSort('name')}>
+                  Ordenar por nombre {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSort('method_type')}>
+                  Ordenar por método {sortField === 'method_type' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSort('lastUsed')}>
+                  Ordenar por último uso {sortField === 'lastUsed' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
           <ScrollArea className="flex-1">
             <OperationsList
               selectedOperation={selectedOperation}
@@ -94,6 +183,8 @@ function SchemaTemplateView() {
               viewMode={viewMode}
               selectedTemplate={selectedTemplate}
               onSelectTemplate={setSelectedTemplate}
+              loading={loading}
+              schemas={filteredSchemas}
             />
           </ScrollArea>
         </div>
