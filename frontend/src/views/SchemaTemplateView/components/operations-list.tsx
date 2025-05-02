@@ -1,12 +1,13 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { PlayCircle, Star, Trash2, FileCode, ChevronRight, ChevronDown, Loader2, Copy, AlertCircle } from "lucide-react"
+import { PlayCircle, Star, Trash2, FileCode, ChevronRight, ChevronDown, Loader2, Copy, AlertCircle, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Schema } from "@/types/schema"
 import { useSchemaStore } from "@/stores/schema/store"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface OperationsListProps {
   selectedOperation: string | null
@@ -35,6 +36,8 @@ export function OperationsList({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [schemasToDelete, setSchemasToDelete] = useState<Set<string>>(new Set())
   const [deletionInProgress, setDeletionInProgress] = useState<string | null>(null)
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   // Filtrar schemas por nombre según la búsqueda
   const filteredSchemas = schemas.filter((schema) => 
@@ -66,6 +69,7 @@ export function OperationsList({
   const handleToggleFavorite = (e: React.MouseEvent, schemaId: string) => {
     e.stopPropagation()
     toggleFavorite(schemaId)
+    setOpenMenuId(null)
   }
   
   const handleTestOperation = (e: React.MouseEvent, schema: Schema) => {
@@ -86,6 +90,7 @@ export function OperationsList({
       console.error("Error al duplicar schema:", error)
     } finally {
       setDuplicatingId(null)
+      setOpenMenuId(null)
     }
   }
 
@@ -127,6 +132,8 @@ export function OperationsList({
         })
       }, 3000)
     }
+    
+    setOpenMenuId(null)
   }
 
   // Mostrar spinner mientras se cargan los datos
@@ -160,6 +167,8 @@ export function OperationsList({
     <div className="p-3 space-y-2">
       {filteredSchemas.map((schema) => {
         const isMarkedForDeletion = schemasToDelete.has(schema.id)
+        const isMenuOpen = openMenuId === schema.id
+        const showMenu = (hoveredCardId === schema.id || isMenuOpen) && !isMarkedForDeletion && viewMode === "schemas"
         
         return (
           <div key={schema.id} className="space-y-1">
@@ -172,7 +181,20 @@ export function OperationsList({
                     ? "border-primary/50 bg-primary/5"
                     : "hover:border-muted-foreground/20",
               )}
-              onClick={() => {
+              onClick={(e) => {
+                console.log("🔍 Card onClick", {
+                  target: e.target,
+                  currentTarget: e.currentTarget,
+                  isFromMenu: Boolean((e.target as HTMLElement).closest('[data-dropdown-menu="true"]')),
+                  schemaId: schema.id
+                });
+                
+                // Si el clic viene del menú, no hacer nada
+                if ((e.target as HTMLElement).closest('[data-dropdown-menu="true"]')) {
+                  console.log("🛑 Click desde menú, deteniendo propagación");
+                  return;
+                }
+                
                 // Cancelar marcado para eliminación si hacemos clic en la card
                 if (isMarkedForDeletion) {
                   const updatedSchemasToDelete = new Set(schemasToDelete)
@@ -194,78 +216,138 @@ export function OperationsList({
                   }
                 }
               }}
+              onMouseEnter={() => {
+                setHoveredCardId(schema.id);
+              }}
+              onMouseLeave={() => {
+                // Solo actualizar hoveredCardId si el menú no está abierto
+                if (!isMenuOpen) {
+                  setHoveredCardId(null);
+                }
+              }}
             >
-              <div className="flex items-center">
-                <Badge variant="outline" className={cn("font-mono text-xs px-2 py-0 mr-2", getMethodColor(schema.method_type))}>
-                  {schema.method_type}
-                </Badge>
-                <h3 className="font-medium text-sm truncate flex-1">{schema.name}</h3>
-              </div>
-              
-              {viewMode === "schemas" && (
-                <div className="flex items-center justify-end gap-1 mt-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-5 w-5", 
-                      schema.favorite ? "text-amber-500" : "text-muted-foreground/40 hover:text-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-950/20"
-                    )}
-                    onClick={(e) => handleToggleFavorite(e, schema.id)}
-                    disabled={isMarkedForDeletion}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center flex-1 min-w-0">
+                  <Badge variant="outline" className={cn("font-mono text-xs px-2 py-0 mr-2", getMethodColor(schema.method_type))}>
+                    {schema.method_type}
+                  </Badge>
+                  <h3 className="font-medium text-sm truncate">{schema.name}</h3>
+                </div>
+                
+                {showMenu && (
+                  <div 
+                    data-dropdown-menu="true" 
+                    onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                      e.stopPropagation();
+                    }}
                   >
-                    <Star className="h-3 w-3" fill={schema.favorite ? "currentColor" : "none"} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 text-muted-foreground/40 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
-                    onClick={(e) => handleDuplicateSchema(e, schema.id)}
-                    disabled={duplicatingId === schema.id || isMarkedForDeletion}
-                  >
-                    {duplicatingId === schema.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
+                    <DropdownMenu open={isMenuOpen} onOpenChange={(open) => {
+                      if (open) {
+                        setOpenMenuId(schema.id);
+                      } else {
+                        setOpenMenuId(null);
+                      }
+                    }}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-3 w-4 ml-2 text-muted-foreground hover:bg-muted"
+                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align="end" 
+                        onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                          e.stopPropagation();
+                        }}
+                        onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
+                          e.stopPropagation();
+                        }}
+                        onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
+                          e.stopPropagation();
+                        }}
+                        onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
+                          e.stopPropagation();
+                        }}
+                        sideOffset={5}
+                        collisionPadding={10}
+                      >
+                        <DropdownMenuItem 
+                          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.stopPropagation();
+                            handleToggleFavorite(e, schema.id);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Star className="h-4 w-4 mr-2" fill={schema.favorite ? "currentColor" : "none"} />
+                          {schema.favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.stopPropagation();
+                            handleDuplicateSchema(e, schema.id);
+                          }}
+                          className="cursor-pointer"
+                          disabled={duplicatingId === schema.id}
+                        >
+                          {duplicatingId === schema.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Copy className="h-4 w-4 mr-2" />
+                          )}
+                          Duplicar schema
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.stopPropagation();
+                            handleDeleteSchema(e, schema.id);
+                          }}
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar schema
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+                
+                {isMarkedForDeletion && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant={isMarkedForDeletion ? "destructive" : "ghost"}
+                          variant="destructive"
                           size="icon"
-                          className={cn(
-                            "h-5 w-5",
-                            isMarkedForDeletion 
-                              ? "text-white" 
-                              : "text-muted-foreground/40 hover:text-destructive hover:bg-red-50/50 dark:hover:bg-red-950/20"
-                          )}
+                          className="h-6 w-6 ml-2"
                           onClick={(e) => handleDeleteSchema(e, schema.id)}
                           disabled={deletionInProgress === schema.id}
                         >
                           {deletionInProgress === schema.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : isMarkedForDeletion ? (
-                            <AlertCircle className="h-3 w-3" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Trash2 className="h-3 w-3" />
+                            <AlertCircle className="h-4 w-4" />
                           )}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="right" align="center" className={isMarkedForDeletion ? "bg-destructive text-white" : ""}>
-                        {isMarkedForDeletion 
-                          ? "Haz clic otra vez para confirmar eliminación" 
-                          : "Eliminar schema"}
+                      <TooltipContent side="right" align="center" className="bg-destructive text-white">
+                        Haz clic otra vez para confirmar eliminación
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                </div>
-              )}
+                )}
+              </div>
               
               {viewMode === "templates" && (
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-muted-foreground">
                     {schema.templates_id?.length || 0} 
                     {!schema.templates_id || schema.templates_id.length === 1 ? " template" : " templates"}
                   </p>
