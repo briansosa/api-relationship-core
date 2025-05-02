@@ -15,4 +15,4 @@ export function InsertOperationSchema(arg1:operation.Operation):Promise<operatio
 
 export function TestRequest(arg1:operation.Operation):Promise<json.RawMessage>;
 
-export function UpdateOperationSchema(arg1:operation.Operation):Promise<void>;
+export function UpdateOperationSchema(arg1:operation.Operation):Promise<operation.Operation>;

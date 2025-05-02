@@ -12,4 +12,4 @@ export function GetOperationTemplate(arg1:string):Promise<operationparameter.Ope
 
 export function InsertOperationTemplate(arg1:operationparameter.OperationParameter):Promise<operationparameter.OperationParameter>;
 
-export function UpdateOperationTemplate(arg1:operationparameter.OperationParameter):Promise<void>;
+export function UpdateOperationTemplate(arg1:operationparameter.OperationParameter):Promise<operationparameter.OperationParameter>;
