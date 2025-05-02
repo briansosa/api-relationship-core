@@ -1,11 +1,12 @@
-"use client"
+// Importamos el archivo para evitar el error de 'use client'
+import useClient from './use-client'
 
 import { useState } from "react"
-import { OperationsList } from "./components/operations-list"
-import { OperationEditor } from "./components/operation-editor"
-import { ResponseViewer } from "./components/response-viewer"
-import { TemplateEditor } from "./components/template-editor"
-import { TemplateParamsPanel } from "./components/template-params-panel"
+import { OperationsList } from "../../app/components/operations-list"
+import { OperationEditor } from "../../app/components/operation-editor"
+import { ResponseViewer } from "../../app/components/response-viewer"
+import { TemplateEditor } from "../../app/components/template-editor"
+import { TemplateParamsPanel } from "../../app/components/template-params-panel"
 import { PlusCircle, Search, X, FileText, FileCode } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

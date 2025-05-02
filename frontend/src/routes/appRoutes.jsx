@@ -4,8 +4,10 @@ import {
   OperationTemplateView,
   ProcessView,
   FlowView,
-  ProcessResultView
+  ProcessResultView,
+  Page
 } from '../views';
+
 
 import {
 UserOutlined,
@@ -27,6 +29,13 @@ export const AppRoutes = [
     path: ["/operation_schemas", "/operation_schemas/:mode", "/operation_schemas/:mode/:id"],
     component: OperationSchemaView,
     title: "Operation Schemas",
+    icon: <UserOutlined/>,
+    children: [],
+  },
+  {
+    path: "/schemas",
+    component: Page,
+    title: "Schemas",
     icon: <UserOutlined/>,
     children: [],
   },

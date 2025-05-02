@@ -1,4 +1,5 @@
-"use client"
+// Importamos el archivo para evitar el error de 'use client'
+import useClient from '../../src/app/use-client'
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

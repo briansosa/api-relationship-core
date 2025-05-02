@@ -1,4 +1,5 @@
-"use client"
+// Importamos el archivo para evitar el error de 'use client'
+import useClient from '../../src/app/use-client'
 
 import { useState } from "react"
 import { Label } from "@/components/ui/label"
