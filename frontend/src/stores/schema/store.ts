@@ -188,9 +188,52 @@ export const useSchemaStore = create<SchemaStore>()(
             throw new Error("Schema no encontrado")
           }
           
-          // Crear una copia del schema con un nuevo nombre
+          // Determinar el nombre apropiado para la copia
+          let newName = originalSchema.name;
+          
+          // Verificar si el nombre ya contiene "copy" o "copy X"
+          const nameRegex = /^(.*?)(?:\s+copy(?:\s+(\d+))?)?$/;
+          const match = originalSchema.name.match(nameRegex);
+          
+          if (match) {
+            const baseName = match[1].trim(); // El nombre base sin sufijo, quitar espacios extras
+            const copyNumber = match[2] ? parseInt(match[2], 10) : null; // El número de copia si existe
+            
+            // Buscar todas las copias existentes para determinar el siguiente número
+            const copiesRegex = new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+copy(?:\\s+(\\d+))?$`);
+            const copies = get().schemas
+              .filter(s => s.name !== originalSchema.name && copiesRegex.test(s.name))
+              .map(s => {
+                const m = s.name.match(/copy\s+(\d+)$/);
+                return m && m[1] ? parseInt(m[1], 10) : 0;
+              })
+              .filter(n => n !== null);
+            
+            // Ordenar de mayor a menor para encontrar el número más alto
+            copies.sort((a, b) => b - a);
+            
+            // Determinar el siguiente número
+            let nextNumber = 0;
+            if (copies.length > 0) {
+              nextNumber = copies[0] + 1;
+            } else if (copyNumber !== null) {
+              nextNumber = copyNumber + 1;
+            } else if (originalSchema.name.includes(' copy')) {
+              nextNumber = 1;
+            }
+            
+            if (nextNumber > 0) {
+              newName = `${baseName} copy ${nextNumber}`;
+            } else {
+              newName = `${baseName} copy`;
+            }
+          } else {
+            newName = `${originalSchema.name} copy`;
+          }
+          
+          // Crear una copia del schema con el nuevo nombre
           const schemaCopy: SchemaCreate = {
-            name: `${originalSchema.name} (copia)`,
+            name: newName,
             method_type: originalSchema.method_type,
             request_type: originalSchema.request_type,
             timeout: originalSchema.timeout,
