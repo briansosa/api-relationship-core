@@ -165,7 +165,7 @@ export function OperationsList({
           <div key={schema.id} className="space-y-1">
             <Card
               className={cn(
-                "p-3 cursor-pointer transition-all border hover:shadow-sm",
+                "p-2 cursor-pointer transition-all border hover:shadow-sm",
                 isMarkedForDeletion 
                   ? "border-red-500 bg-red-50 dark:bg-red-950/20" 
                   : selectedOperation === schema.id && viewMode === "schemas"
@@ -195,107 +195,98 @@ export function OperationsList({
                 }
               }}
             >
-              <div className="flex items-center justify-between mb-1">
-                <Badge variant="outline" className={cn("font-mono text-xs px-2 py-0", getMethodColor(schema.method_type))}>
+              <div className="flex items-center">
+                <Badge variant="outline" className={cn("font-mono text-xs px-2 py-0 mr-2", getMethodColor(schema.method_type))}>
                   {schema.method_type}
                 </Badge>
-                <div className="flex gap-1">
-                  {viewMode === "schemas" ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-6 w-6", 
-                          schema.favorite ? "text-amber-500" : "text-muted-foreground hover:text-amber-500"
-                        )}
-                        onClick={(e) => handleToggleFavorite(e, schema.id)}
-                        disabled={isMarkedForDeletion}
-                      >
-                        <Star className="h-4 w-4" fill={schema.favorite ? "currentColor" : "none"} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-blue-500"
-                        onClick={(e) => handleDuplicateSchema(e, schema.id)}
-                        disabled={duplicatingId === schema.id || isMarkedForDeletion}
-                      >
-                        {duplicatingId === schema.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={isMarkedForDeletion ? "destructive" : "ghost"}
-                              size="icon"
-                              className={cn(
-                                "h-6 w-6",
-                                isMarkedForDeletion 
-                                  ? "text-white" 
-                                  : "text-muted-foreground hover:text-destructive"
-                              )}
-                              onClick={(e) => handleDeleteSchema(e, schema.id)}
-                              disabled={deletionInProgress === schema.id}
-                            >
-                              {deletionInProgress === schema.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : isMarkedForDeletion ? (
-                                <AlertCircle className="h-4 w-4" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" align="center" className={isMarkedForDeletion ? "bg-destructive text-white" : ""}>
-                            {isMarkedForDeletion 
-                              ? "Haz clic otra vez para confirmar eliminación" 
-                              : "Eliminar schema"}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </>
-                  ) : (
-                    schema.templates_id && schema.templates_id.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleExpand(schema.id)
-                        }}
-                      >
-                        {expandedOperations[schema.id] ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )
+                <h3 className="font-medium text-sm truncate flex-1">{schema.name}</h3>
+              </div>
+              
+              {viewMode === "schemas" && (
+                <div className="flex items-center justify-end gap-1 mt-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-5 w-5", 
+                      schema.favorite ? "text-amber-500" : "text-muted-foreground/40 hover:text-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-950/20"
+                    )}
+                    onClick={(e) => handleToggleFavorite(e, schema.id)}
+                    disabled={isMarkedForDeletion}
+                  >
+                    <Star className="h-3 w-3" fill={schema.favorite ? "currentColor" : "none"} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-muted-foreground/40 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+                    onClick={(e) => handleDuplicateSchema(e, schema.id)}
+                    disabled={duplicatingId === schema.id || isMarkedForDeletion}
+                  >
+                    {duplicatingId === schema.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isMarkedForDeletion ? "destructive" : "ghost"}
+                          size="icon"
+                          className={cn(
+                            "h-5 w-5",
+                            isMarkedForDeletion 
+                              ? "text-white" 
+                              : "text-muted-foreground/40 hover:text-destructive hover:bg-red-50/50 dark:hover:bg-red-950/20"
+                          )}
+                          onClick={(e) => handleDeleteSchema(e, schema.id)}
+                          disabled={deletionInProgress === schema.id}
+                        >
+                          {deletionInProgress === schema.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : isMarkedForDeletion ? (
+                            <AlertCircle className="h-3 w-3" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center" className={isMarkedForDeletion ? "bg-destructive text-white" : ""}>
+                        {isMarkedForDeletion 
+                          ? "Haz clic otra vez para confirmar eliminación" 
+                          : "Eliminar schema"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              )}
+              
+              {viewMode === "templates" && (
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {schema.templates_id?.length || 0} 
+                    {!schema.templates_id || schema.templates_id.length === 1 ? " template" : " templates"}
+                  </p>
+                  {schema.templates_id && schema.templates_id.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-muted-foreground/40"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleExpand(schema.id)
+                      }}
+                    >
+                      {expandedOperations[schema.id] ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                    </Button>
                   )}
                 </div>
-              </div>
-              <h3 className="font-medium text-sm">{schema.name}</h3>
-              {viewMode === "schemas" && (
-                <p className="text-xs text-muted-foreground mt-1 flex justify-between">
-                  <span>Timeout: {schema.timeout}s</span>
-                  {schema.lastUsed && (
-                    <span className="text-xs">
-                      {new Date(schema.lastUsed).toLocaleDateString()}
-                    </span>
-                  )}
-                </p>
-              )}
-              {viewMode === "templates" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {schema.templates_id?.length || 0} 
-                  {!schema.templates_id || schema.templates_id.length === 1 ? " template" : " templates"}
-                </p>
               )}
             </Card>
 
