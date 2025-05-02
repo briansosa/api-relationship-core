@@ -15,11 +15,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SortField, SortOrder } from "@/types/schema"
 
 function SchemaTemplateView() {
-  const [selectedOperation, setSelectedOperation] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<"schemas" | "templates">("schemas")
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
-  
   // Acceso al store global
   const { 
     loading, 
@@ -31,14 +26,26 @@ function SchemaTemplateView() {
     sortField,
     sortOrder,
     setSorting,
-    getFilteredSchemas
+    getFilteredSchemas,
+    selectedSchema
   } = useSchemaStore()
   
-  // Cargar schemas al iniciar la vista
+  // Estados locales
+  const [selectedOperation, setSelectedOperation] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState<"schemas" | "templates">("schemas")
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  
+  // Cargar schemas al iniciar la vista y restaurar la selección si existe
   useEffect(() => {
-    // Cargar los schemas cuando se monta el componente
+    // Cargar los schemas solo si es necesario
     fetchSchemas()
-  }, [fetchSchemas])
+    
+    // Restaurar la selección desde el store
+    if (selectedSchema && !selectedOperation) {
+      setSelectedOperation(selectedSchema.id)
+    }
+  }, [fetchSchemas, selectedSchema, selectedOperation])
   
   // Actualizar filtro cuando cambie la búsqueda
   useEffect(() => {
