@@ -274,12 +274,12 @@ Modernizar y unificar el frontend para crear una experiencia más robusta y mant
 ## 1. Configuración de Estado Global con Zustand
 
 ### 1.1 Estructura Base
-- [ ] Crear directorio `stores/`
-- [ ] Configurar TypeScript para stores
-- [ ] Implementar tipos base compartidos
-- [ ] Configurar middleware de desarrollo
+- [X] Crear directorio `stores/`
+- [X] Configurar TypeScript para stores
+- [X] Implementar tipos base compartidos
+- [X] Configurar middleware de desarrollo
 
-### 1.2 Schema Store
+### 1.2 [X] Schema Store
 ```typescript
 interface SchemaStore {
   // Estado
@@ -305,7 +305,7 @@ interface SchemaStore {
 }
 ```
 
-### 1.3 Template Store
+### 1.3 [X] Template Store
 ```typescript
 interface TemplateStore {
   // Estado

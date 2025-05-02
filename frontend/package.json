@@ -21,6 +21,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "curl-to-json-object": "^0.0.3",
+    "immer": "^10.1.1",
     "json-edit-react": "^1.11.0",
     "lucide-react": "^0.503.0",
     "re-resizable": "^6.9.9",
@@ -33,7 +34,8 @@
     "short-unique-id": "^5.2.0",
     "styled-components": "^6.1.8",
     "tailwind-merge": "^3.2.0",
-    "yargs-parser": "^21.1.1"
+    "yargs-parser": "^21.1.1",
+    "zustand": "^5.0.4"
   },
   "devDependencies": {
     "@emotion/react": "^11.11.1",
