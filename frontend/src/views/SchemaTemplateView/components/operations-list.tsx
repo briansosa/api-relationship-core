@@ -241,7 +241,7 @@ export function OperationsList({
                       e.stopPropagation();
                     }}
                   >
-                    <DropdownMenu open={isMenuOpen} onOpenChange={(open) => {
+                    <DropdownMenu open={isMenuOpen} onOpenChange={(open: boolean) => {
                       if (open) {
                         setOpenMenuId(schema.id);
                       } else {
