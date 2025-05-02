@@ -29,9 +29,8 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
   const [newParamKey, setNewParamKey] = useState("")
   const [newParamValue, setNewParamValue] = useState("")
   
-  // Ref para evitar actualizaciones repetidas
-  const initializedRef = useRef(false)
-  const selectedIdRef = useRef<string | null>(null)
+  // Ref para prevenir actualizaciones innecesarias
+  const lastOperationIdRef = useRef<string | null>(null)
 
   // Acceso al store global
   const { 
@@ -44,21 +43,22 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
     transformJsonSchema
   } = useSchemaStore()
 
-  // Cargar el schema cuando cambie el operationId
+  // Detectar cambio de operación seleccionada
   useEffect(() => {
-    if (operationId && schemas.length > 0 && operationId !== selectedIdRef.current) {
-      selectedIdRef.current = operationId
-      selectSchema(operationId)
+    if (operationId !== lastOperationIdRef.current) {
+      lastOperationIdRef.current = operationId
+      if (schemas.length > 0) {
+        selectSchema(operationId)
+      }
     }
   }, [operationId, schemas, selectSchema])
 
   // Sincronizar estado local con el schema seleccionado
   useEffect(() => {
-    if (selectedSchema && !initializedRef.current) {
+    if (selectedSchema && selectedSchema.id === operationId) {
       setLocalSchema(selectedSchema)
-      initializedRef.current = true
     }
-  }, [selectedSchema])
+  }, [selectedSchema, operationId])
 
   // Manejar cambios en los campos
   const handleFieldChange = (field: keyof Schema, value: any) => {
@@ -148,8 +148,6 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
       }
       
       await updateSchema(localSchema.id, schemaUpdate)
-      // Reiniciamos el ref para permitir actualizaciones futuras
-      initializedRef.current = false
       console.log("Schema actualizado correctamente")
     } catch (error) {
       console.error("Error al guardar", error instanceof Error ? error.message : "Error desconocido")

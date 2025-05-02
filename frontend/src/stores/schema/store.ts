@@ -190,8 +190,7 @@ export const useSchemaStore = create<SchemaStore>()(
           if (index !== -1) {
             state.schemas[index] = schemaWithDefaults
             
-            // Actualizar también el schema seleccionado si es el mismo
-            // Importante: creamos un nuevo objeto para evitar ciclos de referencia
+            // Actualizar también el schema seleccionado si es el mismo ID
             if (state.selectedSchema?.id === id) {
               state.selectedSchema = {...schemaWithDefaults}
             }
