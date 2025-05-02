@@ -49,9 +49,10 @@ export interface SchemaStore {
   clearSelection: () => void
 
   // Operaciones CRUD
-  createSchema: (schema: SchemaCreate) => Promise<void>
+  createSchema: (schema: SchemaCreate) => Promise<Schema>
   updateSchema: (id: string, schema: SchemaUpdate) => Promise<void>
   deleteSchema: (id: string) => Promise<void>
+  duplicateSchema: (id: string) => Promise<Schema>
   toggleFavorite: (id: string) => Promise<void>
 
   // Operaciones especiales

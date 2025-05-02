@@ -230,21 +230,7 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
       <div className="p-4 border-b bg-card">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Select 
-              value={localSchema.method_type} 
-              onValueChange={(value) => handleFieldChange("method_type", value)}
-            >
-              <SelectTrigger className="w-28 h-9">
-                <SelectValue placeholder="Método" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="GET">GET</SelectItem>
-                <SelectItem value="POST">POST</SelectItem>
-                <SelectItem value="PUT">PUT</SelectItem>
-                <SelectItem value="DELETE">DELETE</SelectItem>
-                <SelectItem value="PATCH">PATCH</SelectItem>
-              </SelectContent>
-            </Select>
+   
             <Input 
               className="w-64 font-medium" 
               placeholder="Nombre de la operación" 
@@ -253,19 +239,6 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
             />
           </div>
           <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Duplicar
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Crear una copia de esta operación</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
             <Button 
               variant="outline" 
               size="sm" 
@@ -297,26 +270,27 @@ export function OperationEditor({ operationId }: OperationEditorProps) {
 
         <div className="space-y-2">
           <div className="flex gap-2">
+          <Select 
+              value={localSchema.method_type} 
+              onValueChange={(value) => handleFieldChange("method_type", value)}
+            >
+              <SelectTrigger className="w-28 h-9">
+                <SelectValue placeholder="Método" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GET">GET</SelectItem>
+                <SelectItem value="POST">POST</SelectItem>
+                <SelectItem value="PUT">PUT</SelectItem>
+                <SelectItem value="DELETE">DELETE</SelectItem>
+                <SelectItem value="PATCH">PATCH</SelectItem>
+              </SelectContent>
+            </Select>
             <Input
               value={localSchema.url || ""}
               onChange={(e) => handleFieldChange("url", e.target.value)}
               className="flex-1"
               placeholder="URL de la operación"
             />
-            <Select 
-              value={localSchema.timeout.toString()} 
-              onValueChange={(value) => handleFieldChange("timeout", parseInt(value))}
-            >
-              <SelectTrigger className="w-24">
-                <SelectValue placeholder="Timeout" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10s</SelectItem>
-                <SelectItem value="30">30s</SelectItem>
-                <SelectItem value="60">60s</SelectItem>
-                <SelectItem value="120">120s</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Vista previa de URL */}

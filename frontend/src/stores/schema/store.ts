@@ -167,7 +167,44 @@ export const useSchemaStore = create<SchemaStore>()(
           
           set(state => {
             state.schemas.push(schemaWithDefaults)
+            // Si estamos creando un nuevo schema, automáticamente lo seleccionamos
+            state.selectedSchema = schemaWithDefaults
           })
+
+          return schemaWithDefaults
+        } catch (error) {
+          set({ error: error as Error })
+          throw error
+        } finally {
+          set({ loading: false })
+        }
+      },
+
+      duplicateSchema: async (id: string) => {
+        set({ loading: true, error: null })
+        try {
+          const originalSchema = get().schemas.find(s => s.id === id)
+          if (!originalSchema) {
+            throw new Error("Schema no encontrado")
+          }
+          
+          // Crear una copia del schema con un nuevo nombre
+          const schemaCopy: SchemaCreate = {
+            name: `${originalSchema.name} (copia)`,
+            method_type: originalSchema.method_type,
+            request_type: originalSchema.request_type,
+            timeout: originalSchema.timeout,
+            url: originalSchema.url,
+            headers: originalSchema.headers,
+            body: originalSchema.body,
+            query_params: originalSchema.query_params,
+            schema: originalSchema.schema,
+            favorite: false // La copia comienza sin ser favorita
+          }
+          
+          // Usar la función createSchema para crear el duplicado
+          const duplicatedSchema = await get().createSchema(schemaCopy)
+          return duplicatedSchema
         } catch (error) {
           set({ error: error as Error })
           throw error

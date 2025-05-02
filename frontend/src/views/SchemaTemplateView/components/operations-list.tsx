@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { PlayCircle, Star, Trash2, FileCode, ChevronRight, ChevronDown, Loader2 } from "lucide-react"
+import { PlayCircle, Star, Trash2, FileCode, ChevronRight, ChevronDown, Loader2, Copy } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Schema } from "@/types/schema"
@@ -29,7 +29,8 @@ export function OperationsList({
   schemas = []
 }: OperationsListProps) {
   const [expandedOperations, setExpandedOperations] = useState<Record<string, boolean>>({})
-  const { toggleFavorite, testOperation } = useSchemaStore()
+  const { toggleFavorite, testOperation, duplicateSchema } = useSchemaStore()
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
   // Filtrar schemas por nombre según la búsqueda
   const filteredSchemas = schemas.filter((schema) => 
@@ -66,6 +67,22 @@ export function OperationsList({
   const handleTestOperation = (e: React.MouseEvent, schema: Schema) => {
     e.stopPropagation()
     testOperation(schema)
+  }
+
+  const handleDuplicateSchema = async (e: React.MouseEvent, schemaId: string) => {
+    e.stopPropagation()
+    setDuplicatingId(schemaId)
+    try {
+      const duplicatedSchema = await duplicateSchema(schemaId)
+      // Si la duplicación tuvo éxito, seleccionamos el nuevo schema
+      if (duplicatedSchema) {
+        onSelectOperation(duplicatedSchema.id)
+      }
+    } catch (error) {
+      console.error("Error al duplicar schema:", error)
+    } finally {
+      setDuplicatingId(null)
+    }
   }
 
   // Mostrar spinner mientras se cargan los datos
@@ -131,14 +148,6 @@ export function OperationsList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-primary"
-                      onClick={(e) => handleTestOperation(e, schema)}
-                    >
-                      <PlayCircle className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
                       className={cn(
                         "h-6 w-6", 
                         schema.favorite ? "text-amber-500" : "text-muted-foreground hover:text-amber-500"
@@ -146,6 +155,19 @@ export function OperationsList({
                       onClick={(e) => handleToggleFavorite(e, schema.id)}
                     >
                       <Star className="h-4 w-4" fill={schema.favorite ? "currentColor" : "none"} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-blue-500"
+                      onClick={(e) => handleDuplicateSchema(e, schema.id)}
+                      disabled={duplicatingId === schema.id}
+                    >
+                      {duplicatingId === schema.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
