@@ -4,12 +4,8 @@ import OperationTemplateView from "./OperationTemplateView";
 import ProcessView from "./ProcessView";
 import FlowView from "./FlowView";
 import ProcessResultView from "./ProcessResultView";
-import OperationsApp from '../../src/app/page';
+import SchemaTemplateView from "./SchemaTemplateView";
 
-// Creamos un componente React adecuado para exportar OperationsApp
-const Page = () => {
-  return <OperationsApp />;
-};
 
 export {
     HomeView,
@@ -18,5 +14,5 @@ export {
     ProcessView,
     FlowView,
     ProcessResultView,
-    Page
+    SchemaTemplateView
 };

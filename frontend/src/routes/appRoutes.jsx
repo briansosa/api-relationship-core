@@ -5,7 +5,7 @@ import {
   ProcessView,
   FlowView,
   ProcessResultView,
-  Page
+  SchemaTemplateView
 } from '../views';
 
 
@@ -34,7 +34,7 @@ export const AppRoutes = [
   },
   {
     path: "/schemas",
-    component: Page,
+    component: SchemaTemplateView,
     title: "Schemas",
     icon: <UserOutlined/>,
     children: [],
